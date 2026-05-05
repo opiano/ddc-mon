@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PRECISION ENGINE - Binary Objects Explorer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#004560",
+                        "tertiary": "#ffb148",
+                        "secondary-dim": "#8f9fb7",
+                        "on-error-container": "#ff9993",
+                        "surface-variant": "#00225a",
+                        "surface-container-low": "#06122d",
+                        "surface-container-highest": "#00225a",
+                        "primary-fixed": "#c4e7ff",
+                        "secondary": "#8f9fb7",
+                        "on-error": "#490106",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "on-tertiary": "#573500",
+                        "secondary-container": "#2d3c51",
+                        "on-secondary-fixed": "#314055",
+                        "tertiary-dim": "#e79400",
+                        "surface-container-high": "#031d4b",
+                        "primary-fixed-dim": "#a2dcff",
+                        "on-primary-fixed-variant": "#006286",
+                        "inverse-on-surface": "#4d556b",
+                        "on-tertiary-fixed-variant": "#563400",
+                        "tertiary-container": "#f8a010",
+                        "on-secondary": "#102134",
+                        "surface-tint": "#7bd0ff",
+                        "primary-container": "#004c69",
+                        "inverse-primary": "#00668b",
+                        "on-surface-variant": "#91aaeb",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "error-dim": "#bb5551",
+                        "on-secondary-container": "#b0c0da",
+                        "inverse-surface": "#faf8ff",
+                        "primary": "#7bd0ff",
+                        "tertiary-fixed": "#f8a010",
+                        "tertiary-fixed-dim": "#e79400",
+                        "on-tertiary-container": "#4a2c00",
+                        "outline": "#5b74b1",
+                        "primary-dim": "#47c4ff",
+                        "surface-container": "#05183c",
+                        "error-container": "#7f2927",
+                        "background": "#060e20",
+                        "surface-bright": "#002867",
+                        "on-primary-fixed": "#00445e",
+                        "on-primary-container": "#97d8ff",
+                        "on-surface": "#dee5ff",
+                        "surface-container-lowest": "#000000",
+                        "secondary-fixed": "#d3e4fe",
+                        "outline-variant": "#2b4680",
+                        "error": "#ee7d77",
+                        "on-tertiary-fixed": "#2a1700",
+                        "surface-dim": "#060e20",
+                        "surface": "#060e20",
+                        "on-background": "#dee5ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "display": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #060e20; }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-inspector {
+            background: rgba(0, 34, 90, 0.7);
+            backdrop-filter: blur(16px);
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2b4680; border-radius: 2px; }
+    </style>
+</head>
+<body class="text-on-surface overflow-hidden">
+<header class="bg-[#060e20] text-[#7bd0ff] flex justify-between items-center w-full px-6 h-14 z-50 fixed top-0">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#7bd0ff] font-['Space_Grotesk']">PRECISION ENGINE</span>
+<div class="hidden md:flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/20">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-64 placeholder-slate-500" placeholder="Search objects..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 rounded bg-primary-container/30 border border-primary/20">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-bold tracking-widest font-headline">SYSTEM ACTIVE</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-slate-400 hover:bg-[#002867] p-1.5 rounded transition-colors"><span class="material-symbols-outlined" data-icon="notifications">notifications</span></button>
+<button class="text-slate-400 hover:bg-[#002867] p-1.5 rounded transition-colors"><span class="material-symbols-outlined" data-icon="settings">settings</span></button>
+<button class="text-slate-400 hover:bg-[#002867] p-1.5 rounded transition-colors"><span class="material-symbols-outlined" data-icon="sensors">sensors</span></button>
+<div class="w-8 h-8 rounded bg-surface-container-high border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+<img alt="Operator" class="w-full h-full object-cover" data-alt="A close-up, high-detail portrait of a professional system operator in a dim control room setting. The lighting is dominated by the cool blue glow of nearby monitors, casting sharp highlights on their concentrated expression. The style is modern, cinematic, and professional, reflecting the high-stakes environment of an industrial command center." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFvHd1KbyqS9FmFAnB5RlIeGGY-9aP7_j05TTHdHhw27d1v7aIghPkNWhxRMlBsIJtxODp81TQA6K2xk1Q2_Mml7sP2LLofE1-i9Q7g3tYtKUPzdL9A3wl1jwNhhykuhwv8l8wTFb7kL4nEsn1bRadY0SwcgD-MbzFfoqyR1sTRbiT3GXq4l_XKWyJebDUdtEpxARGX0XXFEYcD6H0A-YNpeZHW8WBGrffwbnBUpBLAr79aaZ2Bn59ep_alnyxQfsUA93S4e--IFI"/>
+</div>
+</div>
+</div>
+</header>
+<div class="flex h-screen pt-14">
+<aside class="bg-[#06122d] flex flex-col h-full py-4 border-r border-[#2b4680]/20 w-64 shrink-0 shadow-2xl shadow-black/40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary/10 border border-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+</div>
+<div>
+<div class="text-sm font-bold font-headline text-on-surface">BACnet Explorer</div>
+<div class="text-[10px] text-slate-500 uppercase tracking-widest">Local Network</div>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded group" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="show_chart">show_chart</span>
+<span class="text-sm font-medium font-['Inter']">Analog Objects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 bg-[#031d4b] text-[#7bd0ff] border-l-4 border-[#7bd0ff] font-semibold transition-all rounded-r" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="toggle_on" style="font-variation-settings: 'FILL' 1;">toggle_on</span>
+<span class="text-sm font-medium font-['Inter']">Binary Objects</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded group" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="list_alt">list_alt</span>
+<span class="text-sm font-medium font-['Inter']">Multi-state</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded group" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="calendar_today">calendar_today</span>
+<span class="text-sm font-medium font-['Inter']">Schedules</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded group" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="timeline">timeline</span>
+<span class="text-sm font-medium font-['Inter']">Trends</span>
+</a>
+</nav>
+<div class="px-6 py-4">
+<button class="w-full py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary text-xs font-bold tracking-widest rounded shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all">
+                    SCAN NETWORK
+                </button>
+</div>
+<div class="mt-auto px-3 space-y-1 pb-4">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="terminal">terminal</span>
+<span class="text-xs font-medium font-['Inter']">Diagnostics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-[#00225a] hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span class="text-xs font-medium font-['Inter']">Help</span>
+</a>
+</div>
+</aside>
+<main class="flex-1 bg-surface-dim flex flex-col overflow-hidden relative">
+<div class="p-8 pb-4 flex justify-between items-end">
+<div>
+<h1 class="text-3xl font-bold font-headline tracking-tight text-white mb-1">Binary Objects</h1>
+<p class="text-slate-400 text-sm">Real-time status of binary inputs, outputs, and internal values.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-end">
+<span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Network Load</span>
+<span class="text-xl font-headline font-semibold text-primary">12.4 ms</span>
+</div>
+<div class="flex flex-col items-end border-l border-outline-variant/30 pl-4">
+<span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Total Objects</span>
+<span class="text-xl font-headline font-semibold text-white">128</span>
+</div>
+</div>
+</div>
+<div class="flex-1 px-8 pb-8 overflow-hidden">
+<div class="h-full bg-surface-container-low rounded-lg flex flex-col overflow-hidden">
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] bg-surface-container px-6 py-3 border-b border-outline-variant/10 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+<div>PRI</div>
+<div>Object Name</div>
+<div>Instance ID</div>
+<div>Present Value</div>
+<div>Status</div>
+<div>Reliability</div>
+<div>OOS</div>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- Row 1 -->
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] px-6 py-3.5 items-center hover:bg-surface-bright transition-colors border-b border-outline-variant/5">
+<div class="text-xs font-headline font-bold text-slate-500">8</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-base" data-icon="fan" style="font-variation-settings: 'FILL' 1;">toys_fan</span>
+<span class="text-sm font-medium text-on-surface">AHU_SF_STATUS</span>
+</div>
+<div class="text-xs font-mono text-slate-400">BI:1001</div>
+<div>
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Active
+                                </div>
+</div>
+<div class="text-xs font-bold text-emerald-400">NORMAL</div>
+<div class="text-xs text-slate-400">No Fault</div>
+<div>
+<span class="text-[10px] font-bold text-slate-600 bg-slate-500/10 px-2 py-0.5 rounded">FALSE</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] px-6 py-3.5 items-center hover:bg-surface-bright transition-colors border-b border-outline-variant/5">
+<div class="text-xs font-headline font-bold text-slate-500">12</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 text-base" data-icon="water_drop">water_drop</span>
+<span class="text-sm font-medium text-on-surface">PUMP_01_ENABLE</span>
+</div>
+<div class="text-xs font-mono text-slate-400">BO:2054</div>
+<div>
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[10px] font-bold uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                    Inactive
+                                </div>
+</div>
+<div class="text-xs font-bold text-emerald-400">NORMAL</div>
+<div class="text-xs text-slate-400">No Fault</div>
+<div>
+<span class="text-[10px] font-bold text-slate-600 bg-slate-500/10 px-2 py-0.5 rounded">FALSE</span>
+</div>
+</div>
+<!-- Row 3 (Error State) -->
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] px-6 py-3.5 items-center bg-error-container/5 hover:bg-error-container/10 transition-colors border-b border-outline-variant/5">
+<div class="text-xs font-headline font-bold text-error">1</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-base" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="text-sm font-medium text-on-surface">FIRE_ALARM_CMD</span>
+</div>
+<div class="text-xs font-mono text-slate-400">BV:5002</div>
+<div>
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Active
+                                </div>
+</div>
+<div class="text-xs font-bold text-error">FAULT</div>
+<div class="text-xs text-error/80 italic">Comm Failure</div>
+<div>
+<span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">TRUE</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] px-6 py-3.5 items-center hover:bg-surface-bright transition-colors border-b border-outline-variant/5">
+<div class="text-xs font-headline font-bold text-slate-500">16</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-base" data-icon="lightbulb">lightbulb</span>
+<span class="text-sm font-medium text-on-surface">ZONE_4_LTG_SW</span>
+</div>
+<div class="text-xs font-mono text-slate-400">BI:1140</div>
+<div>
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    Active
+                                </div>
+</div>
+<div class="text-xs font-bold text-emerald-400">NORMAL</div>
+<div class="text-xs text-slate-400">No Fault</div>
+<div>
+<span class="text-[10px] font-bold text-slate-600 bg-slate-500/10 px-2 py-0.5 rounded">FALSE</span>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-[60px_1fr_120px_140px_120px_140px_120px] px-6 py-3.5 items-center hover:bg-surface-bright transition-colors border-b border-outline-variant/5">
+<div class="text-xs font-headline font-bold text-slate-500">--</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-base" data-icon="lock">lock</span>
+<span class="text-sm font-medium text-on-surface">SECURITY_DOOR_L3</span>
+</div>
+<div class="text-xs font-mono text-slate-400">BI:1509</div>
+<div>
+<div class="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[10px] font-bold uppercase">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                    Inactive
+                                </div>
+</div>
+<div class="text-xs font-bold text-tertiary">OFFLINE</div>
+<div class="text-xs text-slate-400">Unreliable Other</div>
+<div>
+<span class="text-[10px] font-bold text-slate-600 bg-slate-500/10 px-2 py-0.5 rounded">FALSE</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Inspector (Asymmetric Layout element) -->
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-80 glass-inspector h-[70%] rounded-l-xl border-l border-outline-variant/30 p-6 shadow-[-20px_0_40px_rgba(0,0,0,0.4)] flex flex-col translate-x-[90%] hover:translate-x-0 transition-transform duration-500 ease-in-out group">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full bg-primary text-on-primary py-4 px-1 rounded-l-lg cursor-pointer group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-sm rotate-90" data-icon="keyboard_capslock">keyboard_capslock</span>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="info" style="font-variation-settings: 'FILL' 1;">info</span>
+</div>
+<div>
+<h3 class="text-sm font-bold font-headline">Object Details</h3>
+<p class="text-[10px] text-slate-400 uppercase tracking-tighter">Live Telemetry Analysis</p>
+</div>
+</div>
+<div class="flex-1 space-y-6 overflow-y-auto pr-2">
+<div class="space-y-2">
+<label class="text-[10px] uppercase font-bold text-slate-500">Trend History</label>
+<div class="h-24 w-full bg-surface-container-highest rounded border border-outline-variant/10 flex items-end px-2 py-1 gap-1">
+<div class="w-full bg-primary/40 h-1/2 rounded-t-[1px]"></div>
+<div class="w-full bg-primary/60 h-2/3 rounded-t-[1px]"></div>
+<div class="w-full bg-primary h-full rounded-t-[1px]"></div>
+<div class="w-full bg-primary/30 h-1/4 rounded-t-[1px]"></div>
+<div class="w-full bg-primary/50 h-3/4 rounded-t-[1px]"></div>
+<div class="w-full bg-primary h-5/6 rounded-t-[1px]"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-3 bg-surface-container-high rounded border border-outline-variant/10">
+<div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Last Transition</div>
+<div class="text-xs font-medium">12:04:32 PM</div>
+</div>
+<div class="p-3 bg-surface-container-high rounded border border-outline-variant/10">
+<div class="text-[10px] text-slate-500 font-bold uppercase mb-1">State Count</div>
+<div class="text-xs font-medium">1,402 ops</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-400">BACnet Device ID</span>
+<span class="font-mono text-primary">40120</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-400">Object Type</span>
+<span class="text-on-surface">Binary Input</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-400">Polarity</span>
+<span class="text-on-surface">Normal</span>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-6 border-t border-outline-variant/20 flex flex-col gap-2">
+<button class="w-full py-2 bg-surface-container-highest text-primary text-[10px] font-bold tracking-widest rounded border border-primary/30 hover:bg-primary/10 transition-colors">OVERRIDE</button>
+<button class="w-full py-2 bg-transparent text-slate-400 text-[10px] font-bold tracking-widest rounded hover:text-white transition-colors">VIEW LOGS</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

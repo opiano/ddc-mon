@@ -1,0 +1,20 @@
+Mosquitto 웹소켓 활성화 방법 (라즈베리파이에서):
+
+설정 파일을 엽니다: sudo nano /etc/mosquitto/conf.d/default.conf (또는 /etc/mosquitto/mosquitto.conf)
+아래 내용을 추가합니다:
+
+listener 1883 0.0.0.0
+protocol mqtt
+listener 9001 0.0.0.0
+protocol websockets
+allow_anonymous true
+
+저장 후 Mosquitto를 재시작합니다: sudo systemctl restart mosquitto
+
+----------------
+
+컴파일 컴파일할 때 반드시 -lmosquitto 옵션을 붙여 라이브러리를 링크해 주어야 합니다.
+gcc mqtt_sample.c -o mqtt_sample -lmosquitto
+
+실행
+./mqtt_sample

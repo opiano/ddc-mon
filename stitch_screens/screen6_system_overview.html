@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precision Engine - System Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#00225a",
+                        "secondary-container": "#2d3c51",
+                        "surface-dim": "#060e20",
+                        "primary-dim": "#47c4ff",
+                        "on-error-container": "#ff9993",
+                        "secondary-fixed-dim": "#c5d6f0",
+                        "on-tertiary-fixed-variant": "#563400",
+                        "surface-tint": "#7bd0ff",
+                        "on-tertiary-fixed": "#2a1700",
+                        "on-primary-fixed": "#00445e",
+                        "on-tertiary": "#573500",
+                        "on-primary-container": "#97d8ff",
+                        "primary-container": "#004c69",
+                        "surface-container-high": "#031d4b",
+                        "tertiary-container": "#f8a010",
+                        "tertiary-fixed": "#f8a010",
+                        "error": "#ee7d77",
+                        "tertiary-fixed-dim": "#e79400",
+                        "inverse-primary": "#00668b",
+                        "on-background": "#dee5ff",
+                        "inverse-surface": "#faf8ff",
+                        "on-error": "#490106",
+                        "tertiary-dim": "#e79400",
+                        "surface-bright": "#002867",
+                        "tertiary": "#ffb148",
+                        "secondary": "#8f9fb7",
+                        "primary-fixed": "#c4e7ff",
+                        "on-tertiary-container": "#4a2c00",
+                        "primary": "#7bd0ff",
+                        "outline-variant": "#2b4680",
+                        "error-container": "#7f2927",
+                        "on-secondary-container": "#b0c0da",
+                        "outline": "#5b74b1",
+                        "secondary-fixed": "#d3e4fe",
+                        "error-dim": "#bb5551",
+                        "secondary-dim": "#8f9fb7",
+                        "on-surface-variant": "#91aaeb",
+                        "surface": "#060e20",
+                        "on-primary-fixed-variant": "#006286",
+                        "inverse-on-surface": "#4d556b",
+                        "surface-container-lowest": "#000000",
+                        "background": "#060e20",
+                        "surface-container": "#05183c",
+                        "surface-container-highest": "#00225a",
+                        "on-secondary-fixed-variant": "#4d5d73",
+                        "on-secondary": "#102134",
+                        "on-primary": "#004560",
+                        "on-secondary-fixed": "#314055",
+                        "on-surface": "#dee5ff",
+                        "primary-fixed-dim": "#a2dcff",
+                        "surface-container-low": "#06122d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "display": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-space { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary/30">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 right-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-slate-950/80 backdrop-blur-xl shadow-[0_40px_40px_-5px_rgba(0,0,0,0.4)] transition-all duration-300 ease-in-out">
+<div class="flex items-center gap-8">
+<div class="text-2xl font-bold tracking-tighter text-sky-400 font-['Space_Grotesk']">Precision Engine</div>
+<div class="hidden md:flex gap-6">
+<a class="text-sky-400 font-bold border-b-2 border-sky-400 pb-1 font-['Space_Grotesk'] tracking-tight" href="#">Dashboard</a>
+<a class="text-slate-400 font-medium hover:bg-slate-800/50 transition-colors font-['Space_Grotesk'] tracking-tight" href="#">Network</a>
+<a class="text-slate-400 font-medium hover:bg-slate-800/50 transition-colors font-['Space_Grotesk'] tracking-tight" href="#">Analytics</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-sky-400 transition-colors">search</span>
+</div>
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-sky-400 transition-colors">settings</span>
+<span class="material-symbols-outlined text-slate-400 cursor-pointer hover:text-sky-400 transition-colors">notifications</span>
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-outline-variant/20 overflow-hidden">
+<img alt="User" class="w-full h-full object-cover" data-alt="A professional close-up of a system administrator avatar with a neutral expression. The image is styled with a high-tech technical aesthetic, using a muted color palette of deep blues and slate grays, consistent with a modern dark-mode enterprise software interface. Soft studio lighting highlights the sharp facial features against a clean, architectural background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0pz25jtQpsekV2di3aa4yNln4L4wCQ3NCve_vBbIcJRSaAF2LQhKTIWoamFi-yYrY_M892oVJZfQ1ocA_AuwZr1FSH3Qw6x2kGyF0Lk4OEWqTVMXnVycjuRqD21dCCj995x3jTmedbNRLJqNfu19H12-gl1z8S-Wj0-Yza9DqFrvGRqVZSWXEKRLS7zK2nrBlntG2T1G7Bwycrx-GgIiqNsWiUwF2K49dQPU93C5v4C2SWoAAOLfaASn-oHeVJZAseADIPTYKX8E"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 bg-slate-900 flex flex-col py-4 font-['Inter'] text-sm antialiased border-r border-outline-variant/10">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3 p-3 bg-slate-950 rounded-lg">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<div>
+<div class="text-on-surface font-bold">Precision Engine</div>
+<div class="text-xs text-slate-400">v2.4.0-Stable</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 px-2">
+<a class="flex items-center gap-3 px-4 py-3 bg-sky-500/10 text-sky-400 font-semibold border-r-4 border-sky-500 transition-all duration-200 Active: scale-[0.98]" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+                Analog Inputs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">toggle_on</span>
+                Binary Outputs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+                Schedules
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+                Trend Logs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">developer_board</span>
+                Device Config
+            </a>
+</nav>
+<div class="mt-auto px-2 space-y-1 border-t border-outline-variant/10 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Diagnostics
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-screen bg-surface-dim">
+<!-- System Health Header -->
+<header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+<div>
+<h1 class="text-4xl font-bold font-space tracking-tight text-on-surface mb-1">System Overview</h1>
+<p class="text-secondary font-label text-sm uppercase tracking-widest">Real-time Node Status Management</p>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container-low px-6 py-4 rounded flex flex-col items-end border-l-4 border-primary">
+<span class="text-primary font-space text-2xl font-bold">98.5%</span>
+<span class="text-xs text-secondary-dim font-label uppercase">System Health</span>
+</div>
+<div class="bg-surface-container-low px-6 py-4 rounded flex flex-col items-end border-l-4 border-secondary">
+<span class="text-on-surface font-space text-2xl font-bold">12ms</span>
+<span class="text-xs text-secondary-dim font-label uppercase">Network Latency</span>
+</div>
+<div class="bg-surface-container-low px-6 py-4 rounded flex flex-col items-end border-l-4 border-primary">
+<span class="text-primary-dim font-space text-xl font-bold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-dim"></span>
+                        Node-04
+                    </span>
+<span class="text-xs text-secondary-dim font-label uppercase">Current Status</span>
+</div>
+</div>
+</header>
+<!-- Bento Grid Main Content -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Metric Cards (Row 1) -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-high p-6 border-l-2 border-outline-variant/20 hover:bg-surface-bright transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">hub</span>
+<span class="text-xs font-bold text-primary px-2 py-1 bg-primary/10 rounded">LIVE</span>
+</div>
+<div class="text-4xl font-bold font-space text-on-surface">1,248</div>
+<div class="text-sm text-secondary uppercase tracking-tight">Total Objects</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-high p-6 border-l-2 border-outline-variant/20 hover:bg-surface-bright transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">router</span>
+</div>
+<div class="text-4xl font-bold font-space text-on-surface">42</div>
+<div class="text-sm text-secondary uppercase tracking-tight">Connected Devices</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-high p-6 border-l-2 border-error/50 hover:bg-error-container/20 transition-colors duration-300">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-error text-3xl">warning</span>
+<span class="text-xs font-bold text-error px-2 py-1 bg-error/10 rounded">CRITICAL</span>
+</div>
+<div class="text-4xl font-bold font-space text-error">3</div>
+<div class="text-sm text-on-error-container uppercase tracking-tight">Active Alarms</div>
+</div>
+<!-- Alarm Distribution & Resources (Row 2) -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-low p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-space text-lg font-bold uppercase tracking-wider text-on-surface">Alarm Distribution</h3>
+<span class="material-symbols-outlined text-slate-500">more_vert</span>
+</div>
+<div class="flex flex-col gap-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-error uppercase">Critical Alarms</span>
+<span class="text-on-surface font-bold">3 / 26 Total</span>
+</div>
+<div class="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error" style="width: 12%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-tertiary uppercase">Warning Thresholds</span>
+<span class="text-on-surface font-bold">8 / 26 Total</span>
+</div>
+<div class="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 31%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-label">
+<span class="text-primary uppercase">Information logs</span>
+<span class="text-on-surface font-bold">15 / 26 Total</span>
+</div>
+<div class="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 57%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-5 bg-surface-container-low p-8">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-space text-lg font-bold uppercase tracking-wider text-on-surface">System Resources</h3>
+</div>
+<div class="grid grid-cols-2 gap-8 h-full pb-8">
+<!-- Custom Gauge Implementation -->
+<div class="flex flex-col items-center justify-center relative">
+<svg class="w-32 h-32 transform -rotate-90">
+<circle class="text-surface-container-highest" cx="64" cy="64" fill="transparent" r="54" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="64" cy="64" fill="transparent" r="54" stroke="currentColor" stroke-dasharray="339.29" stroke-dashoffset="257.86" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center mt-[-4px]">
+<span class="text-2xl font-bold font-space">24%</span>
+<span class="text-[10px] text-secondary-dim font-bold uppercase">CPU</span>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center relative">
+<svg class="w-32 h-32 transform -rotate-90">
+<circle class="text-surface-container-highest" cx="64" cy="64" fill="transparent" r="54" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="64" cy="64" fill="transparent" r="54" stroke="currentColor" stroke-dasharray="339.29" stroke-dashoffset="128.93" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center mt-[-4px]">
+<span class="text-2xl font-bold font-space">62%</span>
+<span class="text-[10px] text-secondary-dim font-bold uppercase">Memory</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Events Log (Row 3) -->
+<div class="col-span-12 bg-surface-container-low overflow-hidden">
+<div class="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="font-space text-lg font-bold uppercase tracking-wider text-on-surface">Recent Events Log</h3>
+<div class="flex gap-4">
+<button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span> Filter
+                        </button>
+<button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">download</span> Export
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-label">
+<thead>
+<tr class="bg-surface-container-high text-xs uppercase tracking-widest text-secondary-dim">
+<th class="px-8 py-4 font-semibold">Timestamp</th>
+<th class="px-8 py-4 font-semibold">Level</th>
+<th class="px-8 py-4 font-semibold">Description</th>
+<th class="px-8 py-4 font-semibold">Source</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-container-highest/30 transition-colors">
+<td class="px-8 py-4 text-sm font-medium text-on-surface/80">14:02:45</td>
+<td class="px-8 py-4">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-tertiary/10 text-tertiary border border-tertiary/20 uppercase">Warning</span>
+</td>
+<td class="px-8 py-4 text-sm text-on-surface">High Temp AHU-01</td>
+<td class="px-8 py-4 text-sm font-mono text-primary-dim">Node-04</td>
+</tr>
+<tr class="bg-surface-container-lowest/5 hover:bg-surface-container-highest/30 transition-colors">
+<td class="px-8 py-4 text-sm font-medium text-on-surface/80">13:58:12</td>
+<td class="px-8 py-4">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">Info</span>
+</td>
+<td class="px-8 py-4 text-sm text-on-surface">System Backup Completed</td>
+<td class="px-8 py-4 text-sm font-mono text-primary-dim">Master-Ctrl</td>
+</tr>
+<tr class="hover:bg-surface-container-highest/30 transition-colors">
+<td class="px-8 py-4 text-sm font-medium text-on-surface/80">13:45:33</td>
+<td class="px-8 py-4">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-error/10 text-error border border-error/20 uppercase">Critical</span>
+</td>
+<td class="px-8 py-4 text-sm text-on-surface">Loss of Communication - Floor 4</td>
+<td class="px-8 py-4 text-sm font-mono text-primary-dim">Router-F4</td>
+</tr>
+<tr class="bg-surface-container-lowest/5 hover:bg-surface-container-highest/30 transition-colors">
+<td class="px-8 py-4 text-sm font-medium text-on-surface/80">13:30:01</td>
+<td class="px-8 py-4">
+<span class="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">Info</span>
+</td>
+<td class="px-8 py-4 text-sm text-on-surface">Scheduled Lighting Override: Active</td>
+<td class="px-8 py-4 text-sm font-mono text-primary-dim">Node-04</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Floating Action Button Contextual Suppression check: Dashboard is primary intent, FAB allowed -->
+<button class="fixed bottom-8 right-8 w-14 h-14 rounded bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group">
+<span class="material-symbols-outlined text-3xl">add</span>
+<span class="absolute right-full mr-4 px-3 py-1.5 bg-surface-container-highest text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-outline-variant/20 uppercase tracking-widest font-bold">New Configuration</span>
+</button>
+</main>
+<!-- BottomNavBar (Mobile Only Mobile Suppression Logic) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-slate-950 flex justify-around items-center z-50">
+<a class="flex flex-col items-center gap-1 text-sky-400 font-bold" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400" href="#">
+<span class="material-symbols-outlined">analytics</span>
+</a>
+</nav>
+</body></html>
