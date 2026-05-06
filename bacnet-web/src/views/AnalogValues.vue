@@ -2,7 +2,7 @@
 import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, publish } = useMqtt()
+const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
 const objects = computed(() => bacnetData.AV || [])
 
 const currentPage = ref(1)
@@ -41,12 +41,10 @@ const submitControl = () => {
     alert("Invalid value")
     return
   }
-  const payload = {
-    id: selectedObject.value.id,
-    value: parsedValue,
-    priority: parseInt(controlPriority.value, 10)
-  }
-  publish('bacnet/objects/control', payload)
+  
+  const [type, idNum] = selectedObject.value.id.split(':')
+  writeValue(type, idNum, parsedValue, parseInt(controlPriority.value, 10))
+  
   showModal.value = false
 }
 

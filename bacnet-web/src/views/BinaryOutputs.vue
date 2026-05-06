@@ -2,7 +2,7 @@
 import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, publish } = useMqtt()
+const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
 const objects = computed(() => bacnetData.BO || [])
 
 const currentPage = ref(1)
@@ -36,12 +36,10 @@ const openControlModal = (obj) => {
 
 const submitControl = () => {
   if (!selectedObject.value) return
-  const payload = {
-    id: selectedObject.value.id,
-    value: controlValue.value ? 'Active' : 'Inactive',
-    priority: parseInt(controlPriority.value, 10)
-  }
-  publish('bacnet/objects/control', payload)
+  const [type, idNum] = selectedObject.value.id.split(':')
+  const valueStr = controlValue.value ? 'Active' : 'Inactive'
+  writeValue(type, idNum, valueStr, parseInt(controlPriority.value, 10))
+  
   showModal.value = false
 }
 

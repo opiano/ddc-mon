@@ -13,7 +13,8 @@ const bacnetData = reactive({
   BV: [],
   MSI: [],
   MSO: [],
-  MSV: []
+  MSV: [],
+  SYS: null
 })
 
 let client = null
@@ -38,7 +39,11 @@ export function useMqtt() {
       activeSubscriptions.forEach(type => {
         const topic = `bacnet/objects/update/${type}`
         client.subscribe(topic, (err) => {
-          if (!err) console.log(`Resubscribed to ${topic}`)
+          if (!err) {
+            console.log(`Resubscribed to ${topic}`)
+            // Notify C backend to start sending data for this type
+            client.publish(`bacnet/request/subscribe/${type}`, '', { qos: 0 })
+          }
         })
       })
     })
@@ -50,7 +55,9 @@ export function useMqtt() {
           const type = updateMatch[1]
           const payload = JSON.parse(message.toString())
           
-          if (bacnetData[type] !== undefined && Array.isArray(payload)) {
+          if (type === 'SYS') {
+             bacnetData.SYS = payload
+          } else if (bacnetData[type] !== undefined && Array.isArray(payload)) {
              bacnetData[type] = payload
           } else if (payload.type && Array.isArray(payload.objects)) {
              if (bacnetData[payload.type] !== undefined) {
@@ -94,7 +101,11 @@ export function useMqtt() {
     if (client && isConnected.value) {
       const topic = `bacnet/objects/update/${type}`
       client.subscribe(topic, (err) => {
-        if (!err) console.log(`Subscribed to ${topic}`)
+        if (!err) {
+          console.log(`Subscribed to ${topic}`)
+          // Notify C backend to start sending data for this type
+          publish(`bacnet/request/subscribe/${type}`, '')
+        }
         else console.error(`Failed to subscribe to ${topic}`, err)
       })
     }
@@ -105,7 +116,11 @@ export function useMqtt() {
     if (client && isConnected.value) {
       const topic = `bacnet/objects/update/${type}`
       client.unsubscribe(topic, (err) => {
-        if (!err) console.log(`Unsubscribed from ${topic}`)
+        if (!err) {
+          console.log(`Unsubscribed from ${topic}`)
+          // Notify C backend to stop sending data for this type
+          publish(`bacnet/request/unsubscribe/${type}`, '')
+        }
       })
     }
   }
@@ -125,6 +140,12 @@ export function useMqtt() {
     }
   }
 
+  const writeValue = (type, id, value, priority = 16) => {
+    const topic = `bacnet/command/write/${type}/${id}`
+    const message = `${value},${priority}`
+    publish(topic, message)
+  }
+
   // Automatically connect the first time this composable is used
   if (!client) {
     connect()
@@ -139,6 +160,7 @@ export function useMqtt() {
     setBrokerUrl,
     subscribeToType,
     unsubscribeFromType,
-    publish
+    publish,
+    writeValue
   }
 }
