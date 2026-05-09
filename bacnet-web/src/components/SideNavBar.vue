@@ -19,10 +19,10 @@ const navItems = [
 
 <template>
   <aside class="bg-[#06122d] text-[#7bd0ff] font-['Inter'] text-sm h-full w-64 flex flex-col py-4 border-r border-[#2b4680]/20 flex-shrink-0 z-40">
-    <div class="px-6 mb-6">
+    <router-link to="/" class="block px-6 mb-6 cursor-pointer hover:opacity-80 transition-opacity">
       <h2 class="text-lg font-bold text-[#7bd0ff]">DDC Controller</h2>
       <p class="text-[10px] uppercase tracking-widest text-slate-500">SMART CONTROL</p>
-    </div>
+    </router-link>
     <div class="flex-1 overflow-y-auto no-scrollbar space-y-1 px-3">
       <router-link 
         v-for="item in navItems" :key="item.path" :to="item.path"

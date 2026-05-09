@@ -3,7 +3,14 @@ import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType } = useMqtt()
-const objects = computed(() => bacnetData.AI || [])
+const objects = computed(() => {
+  const data = bacnetData.AI || []
+  return [...data].sort((a, b) => {
+    const idA = parseInt(a.id.split(':')[1], 10)
+    const idB = parseInt(b.id.split(':')[1], 10)
+    return idA - idB
+  })
+})
 
 const currentPage = ref(1)
 const itemsPerPage = 20
@@ -62,20 +69,20 @@ onUnmounted(() => {
               <div v-else>No Analog Input objects found.</div>
             </td>
           </tr>
-          <tr v-for="obj in paginatedObjects" :key="obj.id" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.status === 'Alarm', 'bg-tertiary/5': obj.status === 'Fault' }">
+          <tr v-for="obj in paginatedObjects" :key="obj.id" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.sts === 'Alarm', 'bg-tertiary/5': obj.sts === 'Fault' }">
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.presentValue }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pv }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.units }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
               <span class="inline-flex px-1.5 py-0.5 rounded text-sm font-bold uppercase" :class="{
-                'bg-primary/10 text-primary': obj.status === 'Normal',
-                'bg-error/10 text-error': obj.status === 'Alarm',
-                'bg-tertiary/10 text-tertiary': obj.status === 'Fault'
-              }">{{ obj.status }}</span>
+                'bg-primary/10 text-primary': obj.sts === 'Normal',
+                'bg-error/10 text-error': obj.sts === 'Alarm',
+                'bg-tertiary/10 text-tertiary': obj.sts === 'Fault'
+              }">{{ obj.sts }}</span>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.reliability }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.rel }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
               <span v-if="obj.oos" class="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">TRUE</span>
               <span v-else class="text-sm font-bold text-slate-600 bg-slate-500/10 px-2 py-0.5 rounded">FALSE</span>
@@ -101,7 +108,7 @@ onUnmounted(() => {
           <button @click="nextPage" :disabled="currentPage === totalPages" class="hover:text-primary disabled:opacity-30 transition-colors">Next</button>
         </div>
         <div class="h-4 w-px bg-outline-variant/20"></div>
-        <span :class="isConnected ? 'text-primary' : 'text-error'">MQTT: {{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <span :class="isConnected ? 'text-primary' : 'text-error'">{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
       </div>
     </footer>
   </div>

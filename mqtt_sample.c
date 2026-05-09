@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <time.h>
 #include <mosquitto.h>
 
 // 브로커 설정 (라즈베리파이 내부 로컬 접속)
@@ -21,6 +22,80 @@ int get_type_index(const char* type) {
         if (strcmp(types[i], type) == 0) return i;
     }
     return -1;
+}
+
+// Global variables to store previous CPU stat
+static unsigned long long prev_total = 0;
+static unsigned long long prev_idle = 0;
+
+int get_cpu_usage() {
+    FILE *fp = fopen("/proc/stat", "r");
+    if (!fp) return 0;
+    
+    char buffer[1024];
+    if (!fgets(buffer, sizeof(buffer), fp)) {
+        fclose(fp);
+        return 0;
+    }
+    fclose(fp);
+    
+    unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
+    if (sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu", 
+               &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal) < 8) {
+        return 0;
+    }
+    
+    unsigned long long total_idle = idle + iowait;
+    unsigned long long total_non_idle = user + nice + system + irq + softirq + steal;
+    unsigned long long total = total_idle + total_non_idle;
+    
+    int usage = 0;
+    if (prev_total != 0) {
+        unsigned long long total_diff = total - prev_total;
+        unsigned long long idle_diff = total_idle - prev_idle;
+        if (total_diff > 0) {
+            usage = (int)(((total_diff - idle_diff) * 100) / total_diff);
+        }
+    }
+    
+    prev_total = total;
+    prev_idle = total_idle;
+    
+    return usage;
+}
+
+int get_memory_usage() {
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (!fp) return 0;
+    
+    char buffer[256];
+    unsigned long long mem_total = 0, mem_available = 0, mem_free = 0, buffers = 0, cached = 0;
+    
+    while (fgets(buffer, sizeof(buffer), fp)) {
+        if (strncmp(buffer, "MemTotal:", 9) == 0) {
+            sscanf(buffer, "MemTotal: %llu", &mem_total);
+        } else if (strncmp(buffer, "MemAvailable:", 13) == 0) {
+            sscanf(buffer, "MemAvailable: %llu", &mem_available);
+        } else if (strncmp(buffer, "MemFree:", 8) == 0) {
+            sscanf(buffer, "MemFree: %llu", &mem_free);
+        } else if (strncmp(buffer, "Buffers:", 8) == 0) {
+            sscanf(buffer, "Buffers: %llu", &buffers);
+        } else if (strncmp(buffer, "Cached:", 7) == 0) {
+            sscanf(buffer, "Cached: %llu", &cached);
+        }
+    }
+    fclose(fp);
+    
+    if (mem_total == 0) return 0;
+    
+    unsigned long long used = 0;
+    if (mem_available > 0) {
+        used = mem_total - mem_available;
+    } else {
+        used = mem_total - (mem_free + buffers + cached);
+    }
+    
+    return (int)((used * 100) / mem_total);
 }
 
 // 브로커 접속 완료 시 호출되는 콜백 함수
@@ -93,6 +168,10 @@ int main() {
     struct mosquitto *mosq = NULL;
     int rc;
 
+    time_t boot_time = time(NULL);
+    char boot_time_str[64];
+    strftime(boot_time_str, sizeof(boot_time_str), "%Y-%m-%d %H:%M:%S", localtime(&boot_time));
+
     // 1. Mosquitto 라이브러리 초기화
     mosquitto_lib_init();
 
@@ -128,11 +207,63 @@ int main() {
                 char payload[32768];
                 
                 if (strcmp(types[t], "SYS") == 0) {
-                    int cpu = 20 + (cycle % 20);
-                    int mem = 60 + (cycle % 10);
+                    int cpu = get_cpu_usage();
+                    int mem = get_memory_usage();
+                    time_t now = time(NULL);
+                    char sys_time_str[64];
+                    strftime(sys_time_str, sizeof(sys_time_str), "%Y-%m-%d %H:%M:%S", localtime(&now));
+                    long uptime = (long)difftime(now, boot_time);
+
+                    const char* ev1_ts = "2026-05-09 14:02:45";
+                    const char* ev1_state = "Warning";
+                    const char* ev1_name = "High Temp AHU-01";
+                    const char* ev1_id = "Node-04";
+
+                    const char* ev2_ts = "2026-05-09 13:58:12";
+                    const char* ev2_state = "Info";
+                    const char* ev2_name = "System Backup Completed";
+                    const char* ev2_id = "Master-Ctrl";
+
+                    const char* ev3_ts = "2026-05-09 13:45:33";
+                    const char* ev3_state = "Critical";
+                    const char* ev3_name = "Loss of Communication - Floor 4";
+                    const char* ev3_id = "Router-F4";
+
+                    const char* ev4_ts = "2026-05-09 13:30:01";
+                    const char* ev4_state = "Info";
+                    const char* ev4_name = "Scheduled Lighting Override: Active";
+                    const char* ev4_id = "Node-04";
+
+                    const char* ev5_ts = "2026-05-09 13:15:00";
+                    const char* ev5_state = "Normal";
+                    const char* ev5_name = "System Startup";
+                    const char* ev5_id = "Master-Ctrl";
+
+                    char events_json[2048];
+                    snprintf(events_json, sizeof(events_json), 
+                        "["
+                        "{\"timestamp\":\"%s\",\"eventState\":\"%s\",\"objectName\":\"%s\",\"objectId\":\"%s\"},"
+                        "{\"timestamp\":\"%s\",\"eventState\":\"%s\",\"objectName\":\"%s\",\"objectId\":\"%s\"},"
+                        "{\"timestamp\":\"%s\",\"eventState\":\"%s\",\"objectName\":\"%s\",\"objectId\":\"%s\"},"
+                        "{\"timestamp\":\"%s\",\"eventState\":\"%s\",\"objectName\":\"%s\",\"objectId\":\"%s\"},"
+                        "{\"timestamp\":\"%s\",\"eventState\":\"%s\",\"objectName\":\"%s\",\"objectId\":\"%s\"}"
+                        "]",
+                        ev1_ts, ev1_state, ev1_name, ev1_id,
+                        ev2_ts, ev2_state, ev2_name, ev2_id,
+                        ev3_ts, ev3_state, ev3_name, ev3_id,
+                        ev4_ts, ev4_state, ev4_name, ev4_id,
+                        ev5_ts, ev5_state, ev5_name, ev5_id);
+
+                    const char* bacnet_instance = "BACnet-04";
+                    const char* system_status = "Normal";
+                    int total_objects = 1248;
+                    int modules = 42;
+                    int active_alarms = 3;
+                    const char* hostname = "DDC-Controller-01";
+
                     snprintf(payload, sizeof(payload), 
-                        "{\"bacnetInstance\":\"BACnet-04\",\"systemStatus\":\"Normal\",\"totalObjects\":1248,\"modules\":42,\"activeAlarms\":3,\"cpuUsage\":%d,\"memoryUsage\":%d}",
-                        cpu, mem);
+                        "{\"bacnetInstance\":\"%s\",\"systemStatus\":\"%s\",\"totalObjects\":%d,\"modules\":%d,\"activeAlarms\":%d,\"cpuUsage\":%d,\"memoryUsage\":%d,\"hostname\":\"%s\",\"systemTime\":\"%s\",\"uptime\":%ld,\"bootTime\":\"%s\",\"events\":%s}",
+                        bacnet_instance, system_status, total_objects, modules, active_alarms, cpu, mem, hostname, sys_time_str, uptime, boot_time_str, events_json);
                 } else {
                     strcpy(payload, "[");
                     
@@ -140,17 +271,49 @@ int main() {
                         char obj[256];
                         
                         if (strcmp(types[t], "AI") == 0 || strcmp(types[t], "AO") == 0 || strcmp(types[t], "AV") == 0) {
+                            int id = i;
+                            char name[64];
+                            snprintf(name, sizeof(name), "Analog Node %d", i);
+                            const char* port = "MSTP:1";
+                            float pv = 20.0 + (i * 0.1) + (cycle * 0.5);
+                            const char* units = "°C";
+                            const char* sts = (i % 15 == 0) ? "Alarm" : "Normal";
+                            const char* rel = "No Fault";
+                            const char* oos = (i % 20 == 0) ? "true" : "false";
+                            int pri = (i % 5 == 0) ? 8 : 16;
+                            
                             snprintf(obj, sizeof(obj), 
-                                "{\"id\":\"%s:%d\",\"name\":\"Analog Node %d\",\"port\":\"MSTP:1\",\"presentValue\":%.1f,\"units\":\"°C\",\"status\":\"%s\",\"reliability\":\"No Fault\"}%s", 
-                                types[t], i, i, 20.0 + (i * 0.1) + (cycle * 0.5), (i % 15 == 0) ? "Alarm" : "Normal", (i == 100) ? "" : ",");
+                                "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\",\"pv\":%.1f,\"units\":\"%s\",\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d}%s", 
+                                types[t], id, name, port, pv, units, sts, rel, oos, pri, (i == 100) ? "" : ",");
                         } else if (strcmp(types[t], "BI") == 0 || strcmp(types[t], "BO") == 0 || strcmp(types[t], "BV") == 0) {
+                            int id = i;
+                            char name[64];
+                            snprintf(name, sizeof(name), "Binary Node %d", i);
+                            const char* port = "MSTP:1";
+                            const char* pv = ((i + cycle) % 2 == 0) ? "Active" : "Inactive";
+                            const char* sts = (i % 15 == 0) ? "FAULT" : "NORMAL";
+                            const char* rel = "No Fault";
+                            const char* oos = (i % 20 == 0) ? "true" : "false";
+                            int pri = (i % 5 == 0) ? 8 : 16;
+
                             snprintf(obj, sizeof(obj), 
-                                "{\"id\":\"%s:%d\",\"name\":\"Binary Node %d\",\"port\":\"MSTP:1\",\"presentValue\":\"%s\",\"status\":\"%s\",\"reliability\":\"No Fault\"}%s", 
-                                types[t], i, i, ((i + cycle) % 2 == 0) ? "Active" : "Inactive", (i % 15 == 0) ? "FAULT" : "NORMAL", (i == 100) ? "" : ",");
+                                "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\",\"pv\":\"%s\",\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d}%s", 
+                                types[t], id, name, port, pv, sts, rel, oos, pri, (i == 100) ? "" : ",");
                         } else if (strcmp(types[t], "MSV") == 0) {
+                            int id = i;
+                            char name[64];
+                            snprintf(name, sizeof(name), "MultiState Node %d", i);
+                            const char* port = "MSTP:1";
+                            int pv = ((i + cycle) % 4) + 1;
+                            int states = 4;
+                            const char* sts = (i % 15 == 0) ? "FAULT" : "NORMAL";
+                            const char* rel = "No Fault";
+                            const char* oos = (i % 20 == 0) ? "true" : "false";
+                            int pri = (i % 5 == 0) ? 8 : 16;
+
                             snprintf(obj, sizeof(obj), 
-                                "{\"id\":\"%s:%d\",\"name\":\"MultiState Node %d\",\"port\":\"MSTP:1\",\"presentValue\":%d,\"states\":%d,\"status\":\"%s\",\"reliability\":\"No Fault\"}%s", 
-                                types[t], i, i, ((i + cycle) % 4) + 1, 4, (i % 15 == 0) ? "FAULT" : "NORMAL", (i == 100) ? "" : ",");
+                                "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\",\"pv\":%d,\"states\":%d,\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d}%s", 
+                                types[t], id, name, port, pv, states, sts, rel, oos, pri, (i == 100) ? "" : ",");
                         }
                         
                         strcat(payload, obj);

@@ -4,11 +4,12 @@ import { useMqtt } from '../composables/useMqtt'
 
 const { brokerUrl, setBrokerUrl } = useMqtt()
 
+const defaultBrokerUrl = `ws://${window.location.hostname}:9001`
 const showSettingsModal = ref(false)
 const inputBrokerUrl = ref('')
 
 const openSettings = () => {
-  inputBrokerUrl.value = brokerUrl.value
+  inputBrokerUrl.value = brokerUrl.value || defaultBrokerUrl
   showSettingsModal.value = true
 }
 
@@ -55,8 +56,8 @@ const closeSettings = () => {
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-sm font-bold text-slate-400 mb-2">MQTT Broker URL (WebSocket)</label>
-          <input type="text" v-model="inputBrokerUrl" placeholder="ws://192.168.219.128:9001" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
-          <p class="text-xs text-slate-500 mt-2">Example: ws://192.168.1.100:9001</p>
+          <input type="text" v-model="inputBrokerUrl" :placeholder="defaultBrokerUrl" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+          <p class="text-xs text-slate-500 mt-2">Example: {{ defaultBrokerUrl }}</p>
         </div>
       </div>
       <div class="px-6 py-4 bg-surface-container-low flex justify-end gap-3 border-t border-outline-variant/10">

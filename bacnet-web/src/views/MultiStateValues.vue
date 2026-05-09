@@ -3,7 +3,14 @@ import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
-const objects = computed(() => bacnetData.MSV || [])
+const objects = computed(() => {
+  const data = bacnetData.MSV || []
+  return [...data].sort((a, b) => {
+    const idA = parseInt(a.id.split(':')[1], 10)
+    const idB = parseInt(b.id.split(':')[1], 10)
+    return idA - idB
+  })
+})
 
 const currentPage = ref(1)
 const itemsPerPage = 20
@@ -30,7 +37,7 @@ const controlPriority = ref(8)
 const openControlModal = (obj) => {
   selectedObject.value = obj
   controlValue.value = 1 // Default to 1 for MSV as it's often hard to reverse-map text to state
-  controlPriority.value = obj.priority || 8
+  controlPriority.value = obj.pri || 8
   showModal.value = true
 }
 
@@ -89,27 +96,27 @@ const closeModal = () => {
               <div v-else>No Multi-state Value objects found.</div>
             </td>
           </tr>
-          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.status === 'FAULT' || obj.status === 'Fault' }">
+          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.sts === 'FAULT' || obj.sts === 'Fault' }">
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
               <span class="px-2 py-0.5 rounded-sm text-sm font-bold uppercase border"
                     :class="{
-                      'bg-primary/10 text-primary border-primary/20': obj.status === 'NORMAL' || obj.status === 'Normal',
-                      'bg-error/10 text-error border-error/20': obj.status === 'FAULT' || obj.status === 'Fault',
-                      'bg-tertiary/10 text-tertiary border-tertiary/20': obj.status !== 'NORMAL' && obj.status !== 'Normal' && obj.status !== 'FAULT' && obj.status !== 'Fault'
-                    }">{{ obj.presentValue }}</span>
+                      'bg-primary/10 text-primary border-primary/20': obj.sts === 'NORMAL' || obj.sts === 'Normal',
+                      'bg-error/10 text-error border-error/20': obj.sts === 'FAULT' || obj.sts === 'Fault',
+                      'bg-tertiary/10 text-tertiary border-tertiary/20': obj.sts !== 'NORMAL' && obj.sts !== 'Normal' && obj.sts !== 'FAULT' && obj.sts !== 'Fault'
+                    }">{{ obj.pv }}</span>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.priority || 16 }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pri || 16 }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.states }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
-              <span class="inline-flex items-center gap-1.5 text-sm font-bold" :class="(obj.status === 'NORMAL' || obj.status === 'Normal') ? 'text-primary' : 'text-error'">
-                <span class="h-1.5 w-1.5 rounded-full" :class="(obj.status === 'NORMAL' || obj.status === 'Normal') ? 'bg-primary' : 'bg-error'"></span>
-                {{ obj.status ? obj.status.toUpperCase() : 'NORMAL' }}
+              <span class="inline-flex items-center gap-1.5 text-sm font-bold" :class="(obj.sts === 'NORMAL' || obj.sts === 'Normal') ? 'text-primary' : 'text-error'">
+                <span class="h-1.5 w-1.5 rounded-full" :class="(obj.sts === 'NORMAL' || obj.sts === 'Normal') ? 'bg-primary' : 'bg-error'"></span>
+                {{ obj.sts ? obj.sts.toUpperCase() : 'NORMAL' }}
               </span>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.reliability }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.rel }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
           </tr>
         </tbody>
@@ -131,7 +138,7 @@ const closeModal = () => {
           <button @click="nextPage" :disabled="currentPage === totalPages" class="hover:text-primary disabled:opacity-30 transition-colors">Next</button>
         </div>
         <div class="h-4 w-px bg-outline-variant/20"></div>
-        <span :class="isConnected ? 'text-primary' : 'text-error'">MQTT: {{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <span :class="isConnected ? 'text-primary' : 'text-error'">{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
       </div>
     </footer>
 

@@ -3,7 +3,14 @@ import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
-const objects = computed(() => bacnetData.AV || [])
+const objects = computed(() => {
+  const data = bacnetData.AV || []
+  return [...data].sort((a, b) => {
+    const idA = parseInt(a.id.split(':')[1], 10)
+    const idB = parseInt(b.id.split(':')[1], 10)
+    return idA - idB
+  })
+})
 
 const currentPage = ref(1)
 const itemsPerPage = 20
@@ -29,8 +36,8 @@ const controlPriority = ref(8)
 
 const openControlModal = (obj) => {
   selectedObject.value = obj
-  controlValue.value = obj.presentValue
-  controlPriority.value = obj.priority || 8
+  controlValue.value = obj.pv
+  controlPriority.value = obj.pri || 8
   showModal.value = true
 }
 
@@ -89,21 +96,21 @@ const closeModal = () => {
               <div v-else>No Analog Value objects found.</div>
             </td>
           </tr>
-          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.status === 'Alarm', 'bg-tertiary/5': obj.status === 'Fault' }">
+          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error/5': obj.sts === 'Alarm', 'bg-tertiary/5': obj.sts === 'Fault' }">
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.presentValue }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.priority || 16 }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pv }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pri || 16 }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.units }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
               <span class="inline-flex px-1.5 py-0.5 rounded text-sm font-bold uppercase" :class="{
-                'bg-primary/10 text-primary': obj.status === 'Normal',
-                'bg-error/10 text-error': obj.status === 'Alarm',
-                'bg-tertiary/10 text-tertiary': obj.status === 'Fault'
-              }">{{ obj.status }}</span>
+                'bg-primary/10 text-primary': obj.sts === 'Normal',
+                'bg-error/10 text-error': obj.sts === 'Alarm',
+                'bg-tertiary/10 text-tertiary': obj.sts === 'Fault'
+              }">{{ obj.sts }}</span>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.reliability }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.rel }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
           </tr>
         </tbody>
@@ -125,7 +132,7 @@ const closeModal = () => {
           <button @click="nextPage" :disabled="currentPage === totalPages" class="hover:text-primary disabled:opacity-30 transition-colors">Next</button>
         </div>
         <div class="h-4 w-px bg-outline-variant/20"></div>
-        <span :class="isConnected ? 'text-primary' : 'text-error'">MQTT: {{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <span :class="isConnected ? 'text-primary' : 'text-error'">{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
       </div>
     </footer>
 

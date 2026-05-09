@@ -3,7 +3,14 @@ import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
-const objects = computed(() => bacnetData.BV || [])
+const objects = computed(() => {
+  const data = bacnetData.BV || []
+  return [...data].sort((a, b) => {
+    const idA = parseInt(a.id.split(':')[1], 10)
+    const idB = parseInt(b.id.split(':')[1], 10)
+    return idA - idB
+  })
+})
 
 const currentPage = ref(1)
 const itemsPerPage = 20
@@ -29,8 +36,8 @@ const controlPriority = ref(8)
 
 const openControlModal = (obj) => {
   selectedObject.value = obj
-  controlValue.value = (obj.presentValue === 'Active' || obj.presentValue === true)
-  controlPriority.value = obj.priority || 8
+  controlValue.value = (obj.pv === 'Active' || obj.pv === true)
+  controlPriority.value = obj.pri || 8
   showModal.value = true
 }
 
@@ -83,20 +90,20 @@ const closeModal = () => {
               <div v-else>No Binary Value objects found.</div>
             </td>
           </tr>
-          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error-container/5': obj.status === 'FAULT' || obj.status === 'Fault', 'bg-tertiary/5': obj.status === 'OFFLINE' }">
+          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error-container/5': obj.sts === 'FAULT' || obj.sts === 'Fault', 'bg-tertiary/5': obj.sts === 'OFFLINE' }">
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">
               <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded text-sm font-bold uppercase"
-                   :class="obj.presentValue === 'Active' || obj.presentValue === true ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-slate-500/10 border border-slate-500/20 text-slate-500'">
-                <span class="w-1.5 h-1.5 rounded-full" :class="obj.presentValue === 'Active' || obj.presentValue === true ? 'bg-emerald-500' : 'bg-slate-600'"></span>
-                {{ obj.presentValue === true ? 'Active' : (obj.presentValue === false ? 'Inactive' : obj.presentValue) }}
+                   :class="obj.pv === 'Active' || obj.pv === true ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-slate-500/10 border border-slate-500/20 text-slate-500'">
+                <span class="w-1.5 h-1.5 rounded-full" :class="obj.pv === 'Active' || obj.pv === true ? 'bg-emerald-500' : 'bg-slate-600'"></span>
+                {{ obj.pv === true ? 'Active' : (obj.pv === false ? 'Inactive' : obj.pv) }}
               </div>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.priority || 16 }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.status ? obj.status.toUpperCase() : 'NORMAL' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.reliability }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pri || 16 }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.sts ? obj.sts.toUpperCase() : 'NORMAL' }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.rel }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
           </tr>
         </tbody>
@@ -118,7 +125,7 @@ const closeModal = () => {
           <button @click="nextPage" :disabled="currentPage === totalPages" class="hover:text-primary disabled:opacity-30 transition-colors">Next</button>
         </div>
         <div class="h-4 w-px bg-outline-variant/20"></div>
-        <span :class="isConnected ? 'text-primary' : 'text-error'">MQTT: {{ isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <span :class="isConnected ? 'text-primary' : 'text-error'">{{ isConnected ? 'Connected' : 'Disconnected' }}</span>
       </div>
     </footer>
 

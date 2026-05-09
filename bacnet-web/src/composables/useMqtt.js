@@ -3,7 +3,7 @@ import mqtt from 'mqtt'
 
 // Global state so connection is shared across all components
 const isConnected = ref(false)
-const brokerUrl = ref(localStorage.getItem('mqtt_broker_url') || 'ws://192.168.219.128:9001')
+const brokerUrl = ref(localStorage.getItem('mqtt_broker_url') || `ws://${window.location.hostname}:9001`)
 const bacnetData = reactive({
   AI: [],
   AO: [],
