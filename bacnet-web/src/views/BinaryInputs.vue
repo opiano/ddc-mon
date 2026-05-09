@@ -91,7 +91,7 @@ onUnmounted(() => {
       </table>
     </div>
     <!-- Status Footer -->
-    <footer class="px-6 py-2 bg-surface-container-high border-t border-outline-variant/10 flex items-center justify-between text-sm font-bold text-slate-500 uppercase tracking-widest">
+    <footer class="px-4 md:px-6 pt-3 pb-6 md:py-2 bg-surface-container-high border-t border-outline-variant/10 flex flex-col md:flex-row gap-3 md:gap-0 md:items-center justify-between text-sm font-bold text-slate-500 uppercase tracking-widest">
       <div class="flex items-center gap-4">
         <span>Showing {{ objects.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}-{{ Math.min(currentPage * itemsPerPage, objects.length) }} of {{ objects.length }} objects</span>
         <div class="flex items-center gap-1.5">

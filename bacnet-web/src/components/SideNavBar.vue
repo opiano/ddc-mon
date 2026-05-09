@@ -2,6 +2,7 @@
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+const emit = defineEmits(['close'])
 
 const navItems = [
   { name: 'System Overview', path: '/', icon: 'dashboard' },
@@ -26,6 +27,7 @@ const navItems = [
     <div class="flex-1 overflow-y-auto no-scrollbar space-y-1 px-3">
       <router-link 
         v-for="item in navItems" :key="item.path" :to="item.path"
+        @click="emit('close')"
         :class="['flex items-center gap-3 px-3 py-2 rounded-r-lg transition-all ease-in-out duration-200', 
                  route.path === item.path ? 'bg-[#031d4b] text-[#7bd0ff] font-semibold' : 'text-slate-400 hover:bg-[#00225a]']"
       >

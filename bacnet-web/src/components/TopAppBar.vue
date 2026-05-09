@@ -8,6 +8,8 @@ const defaultBrokerUrl = `ws://${window.location.hostname}:9001`
 const showSettingsModal = ref(false)
 const inputBrokerUrl = ref('')
 
+const emit = defineEmits(['toggle-sidebar'])
+
 const openSettings = () => {
   inputBrokerUrl.value = brokerUrl.value || defaultBrokerUrl
   showSettingsModal.value = true
@@ -26,18 +28,19 @@ const closeSettings = () => {
 </script>
 
 <template>
-  <header class="bg-[#06122d] text-[#7bd0ff] font-['Space_Grotesk'] tracking-tight flex justify-between items-center w-full px-6 h-12 z-50 border-b border-outline-variant/10">
-    <div class="flex items-center gap-4">
-      <span class="text-xl font-bold text-[#7bd0ff] tracking-widest uppercase">SMART BMS</span>
+  <header class="bg-[#06122d] text-[#7bd0ff] font-['Space_Grotesk'] tracking-tight flex justify-between items-center w-full px-4 md:px-6 h-12 z-50 border-b border-outline-variant/10">
+    <div class="flex items-center gap-2 md:gap-4">
+      <button @click="emit('toggle-sidebar')" class="md:hidden material-symbols-outlined p-1 hover:bg-[#00225a] rounded transition-colors text-slate-300">menu</button>
+      <span class="text-lg md:text-xl font-bold text-[#7bd0ff] tracking-widest uppercase">SMART BMS</span>
     </div>
-    <div class="flex items-center gap-4">
-      <div class="relative flex items-center bg-surface-container-highest/50 px-3 py-1.5 rounded-lg border border-outline-variant/10">
+    <div class="flex items-center gap-2 md:gap-4">
+      <div class="hidden sm:flex relative items-center bg-surface-container-highest/50 px-3 py-1.5 rounded-lg border border-outline-variant/10">
         <span class="material-symbols-outlined text-sm text-secondary-dim mr-2">search</span>
-        <input class="bg-transparent border-none focus:ring-0 text-sm w-48 placeholder:text-slate-500 outline-none" placeholder="Search objects..." type="text"/>
+        <input class="bg-transparent border-none focus:ring-0 text-sm w-32 md:w-48 placeholder:text-slate-500 outline-none" placeholder="Search objects..." type="text"/>
       </div>
-      <button class="material-symbols-outlined p-2 text-slate-400 hover:text-[#7bd0ff] transition-colors">notifications</button>
-      <button @click="openSettings" class="material-symbols-outlined p-2 text-slate-400 hover:text-[#7bd0ff] transition-colors">settings</button>
-      <img alt="Operator Profile" class="h-8 w-8 rounded-full border border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSHH8i6XPhsgCO_SDSV4-O9FGL3YEGe9rETnIxWUGfcXPW-gUMjr5MPpsuTyklAvPIJK0dQeDRQ3366kcJ-huGf4b-1fDOmhTCQ2-keZGYJQVYdVgeLeJ4cc4hjdt5JU5vK6VZkJAAzisfoLeRe3PhVhBKb-Tlqi5s3iYfxVMWwqUTqfLUkg_sAoht5sRDB6VTSNiZFI6xk_gqMsQRYahJO3CYF7bu4WzpQLPEV2aVclkQbzbnLlbO6AG3dGGEgszHQxLgqqEIy_Q"/>
+      <button class="hidden sm:block material-symbols-outlined p-1.5 md:p-2 text-slate-400 hover:text-[#7bd0ff] transition-colors">notifications</button>
+      <button @click="openSettings" class="material-symbols-outlined p-1.5 md:p-2 text-slate-400 hover:text-[#7bd0ff] transition-colors">settings</button>
+      <img alt="Operator Profile" class="h-7 w-7 md:h-8 md:w-8 rounded-full border border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSHH8i6XPhsgCO_SDSV4-O9FGL3YEGe9rETnIxWUGfcXPW-gUMjr5MPpsuTyklAvPIJK0dQeDRQ3366kcJ-huGf4b-1fDOmhTCQ2-keZGYJQVYdVgeLeJ4cc4hjdt5JU5vK6VZkJAAzisfoLeRe3PhVhBKb-Tlqi5s3iYfxVMWwqUTqfLUkg_sAoht5sRDB6VTSNiZFI6xk_gqMsQRYahJO3CYF7bu4WzpQLPEV2aVclkQbzbnLlbO6AG3dGGEgszHQxLgqqEIy_Q"/>
     </div>
   </header>
 
