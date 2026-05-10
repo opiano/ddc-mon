@@ -1,0 +1,52 @@
+#publish to raspi
+
+npm run build
+
+copy bacnet-web/dist/* --> ~pi/ddc-web
+
+sudo mkdir -p /var/www/ddc-web
+sudo cp -r /home/pi/ddc-web/* /var/www/ddc-web/
+
+# Nginx가 파일에 접근할 수 있도록 권한 설정
+sudo chown -R www-data:www-data /var/www/ddc-web
+sudo chmod -R 755 /var/www/ddc-web
+
+----------
+nginx 설정
+
+sudo nano /etc/nginx/sites-available/ddc-web
+
+server {
+    listen 80;
+    server_name _; # 모든 도메인/IP 허용
+
+    root /var/www/ddc-web;
+    index index.html;
+
+    location / {
+        # SPA(Single Page Application) 라우팅을 위한 핵심 설정
+        # 경로를 찾을 수 없으면 무조건 index.html을 반환하도록 합니다.
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 브라우저 캐싱 최적화 (선택사항)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+}
+
+-----------
+
+# 기본 nginx 페이지 비활성화 (필요한 경우)
+sudo rm /etc/nginx/sites-enabled/default
+
+# 우리가 만든 설정 심볼릭 링크 생성
+sudo ln -s /etc/nginx/sites-available/ddc-web /etc/nginx/sites-enabled/
+
+----------
+nginx 설정 문법 검사 & 재시작
+sudo nginx -t
+# 문법이 OK라고 나오면 재시작
+sudo systemctl restart nginx
+
