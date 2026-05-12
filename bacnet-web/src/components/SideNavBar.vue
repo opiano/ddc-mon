@@ -13,6 +13,9 @@ const navItems = [
   { name: 'Binary Outputs', path: '/binary-outputs', icon: 'toggle_on' },
   { name: 'Binary Values', path: '/binary-values', icon: 'power_settings_new' },
   { name: 'Multi-state Values', path: '/multi-state-values', icon: 'layers' },
+  { name: 'Calendars', path: '/calendars', icon: 'calendar_month' },
+  { name: 'Schedules', path: '/schedules', icon: 'schedule' },
+  { name: 'Trend Logs', path: '/trend-logs', icon: 'show_chart' },
 ]
 
 

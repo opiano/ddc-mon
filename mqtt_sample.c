@@ -12,10 +12,10 @@
 #define MQTT_KEEP_ALIVE 60
 
 // 웹에서 요청한 타입만 추적하기 위한 플래그 배열
-// AI, AO, AV, BI, BO, BV, MSV, SYS (총 8개)
-bool active_types[8] = {false, false, false, false, false, false, false, false};
-const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "SYS"};
-const int num_types = 8;
+// AI, AO, AV, BI, BO, BV, MSV, SYS, CAL, SCH, TL (총 11개)
+bool active_types[11] = {false, false, false, false, false, false, false, false, false, false, false};
+const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "SYS", "CAL", "SCH", "TL"};
+const int num_types = 11;
 
 int get_type_index(const char *type) {
   for (int i = 0; i < num_types; i++) {
@@ -349,6 +349,43 @@ int main() {
                        "\"oos\":%s,\"pri\":%d}%s",
                        types[t], id, name, port, pv, states, sts, rel, oos, pri,
                        (i == 100) ? "" : ",");
+            } else if (strcmp(types[t], "CAL") == 0) {
+              int id = i;
+              char name[64];
+              snprintf(name, sizeof(name), "Calendar Node %d", i);
+              int totalEntries = (i * 3) % 20;
+              const char *pv = (i % 2 == 0) ? "True" : "False";
+
+              snprintf(obj, sizeof(obj),
+                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"totalEntries\":%d,\"pv\":\"%s\"}%s",
+                       types[t], id, name, totalEntries, pv, (i == 100) ? "" : ",");
+            } else if (strcmp(types[t], "SCH") == 0) {
+              int id = i;
+              char name[64];
+              snprintf(name, sizeof(name), "Schedule Node %d", i);
+              const char *pv = (i % 3 == 0) ? "Active" : "Inactive";
+              const char *effectivePeriod = "2024-01-01 - 2024-12-31";
+              const char *scheduleDefault = "Inactive";
+              char logRef[32];
+              snprintf(logRef, sizeof(logRef), "BO:%d", i);
+
+              snprintf(obj, sizeof(obj),
+                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"logRef\":\"%s\"}%s",
+                       types[t], id, name, pv, effectivePeriod, scheduleDefault, logRef, (i == 100) ? "" : ",");
+            } else if (strcmp(types[t], "TL") == 0) {
+              int id = i;
+              char name[64];
+              snprintf(name, sizeof(name), "TrendLog Node %d", i);
+              const char *enable = (i % 4 == 0) ? "False" : "True";
+              int interval = 15;
+              char logRef[32];
+              snprintf(logRef, sizeof(logRef), "AI:%d", i);
+              int recordCount = 100 + (cycle * 2) % 1000;
+              int totalCount = 5000 + cycle * 2;
+
+              snprintf(obj, sizeof(obj),
+                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"enable\":\"%s\",\"interval\":%d,\"logRef\":\"%s\",\"rc\":%d,\"tc\":%d}%s",
+                       types[t], id, name, enable, interval, logRef, recordCount, totalCount, (i == 100) ? "" : ",");
             }
 
             strcat(payload, obj);

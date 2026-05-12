@@ -14,6 +14,9 @@ const bacnetData = reactive({
   MSI: [],
   MSO: [],
   MSV: [],
+  CAL: [],
+  SCH: [],
+  TL: [],
   SYS: null
 })
 

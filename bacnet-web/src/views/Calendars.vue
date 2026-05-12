@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType } = useMqtt()
 const objects = computed(() => {
-  const data = bacnetData.SCH || []
+  const data = bacnetData.CAL || []
   return [...data].sort((a, b) => {
     const idA = parseInt(a.id?.split(':')[1] || 0, 10)
     const idB = parseInt(b.id?.split(':')[1] || 0, 10)
@@ -26,18 +26,18 @@ const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.v
 const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
 
 onMounted(() => {
-  subscribeToType('SCH')
+  subscribeToType('CAL')
 })
 
 onUnmounted(() => {
-  unsubscribeFromType('SCH')
+  unsubscribeFromType('CAL')
 })
 </script>
 <template>
   <div class="flex flex-col h-full bg-[#060e20]">
     <div class="px-6 py-2 flex items-center justify-between border-b border-outline-variant/10 bg-surface-container-low/30">
       <div class="flex items-center gap-4">
-        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">Schedules</h1>
+        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">Calendars</h1>
         <span class="text-sm text-slate-500 font-medium">{{ objects.length }} objects discovered</span>
       </div>
     </div>
@@ -47,30 +47,26 @@ onUnmounted(() => {
           <tr>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-6">Instance ID</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Object Name</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Present Value</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Effective Period</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Schedule Default</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Log Ref</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Total Entries</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-right">Present Value</th>
             <th class="w-10"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-outline-variant/5">
           <tr v-if="objects.length === 0">
-            <td colspan="7" class="text-center py-8 text-slate-500">
+            <td colspan="5" class="text-center py-8 text-slate-500">
               <div v-if="!isConnected" class="flex items-center justify-center gap-2">
                 <span class="material-symbols-outlined animate-spin">sync</span>
                 Connecting to MQTT Broker...
               </div>
-              <div v-else>No Schedule objects found.</div>
+              <div v-else>No Calendar objects found.</div>
             </td>
           </tr>
           <tr v-for="obj in paginatedObjects" :key="obj.id" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer">
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pv }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.effPeriod || '-' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.schDef || '-' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.logRef || '-' }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.totalEntries || '0' }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pr-4 text-right">{{ obj.pv }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4 text-center"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
           </tr>
         </tbody>
