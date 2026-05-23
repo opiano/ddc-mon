@@ -104,6 +104,27 @@ int get_memory_usage() {
   return (int)((used * 100) / mem_total);
 }
 
+double get_cpu_temperature() {
+  FILE *fp = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
+  if (!fp) {
+    // Return a simulated temperature between 45.0°C and 70.0°C
+    static double sim_temp = 45.0;
+    sim_temp += ((rand() % 20) - 10) / 10.0;
+    if (sim_temp < 35.0) sim_temp = 35.0;
+    if (sim_temp > 75.0) sim_temp = 75.0;
+    return sim_temp;
+  }
+  long temp_raw = 0;
+  if (fscanf(fp, "%ld", &temp_raw) != 1) {
+    temp_raw = 0;
+  }
+  fclose(fp);
+  if (temp_raw > 0) {
+    return temp_raw / 1000.0;
+  }
+  return 45.0;
+}
+
 // 브로커 접속 완료 시 호출되는 콜백 함수
 void on_connect(struct mosquitto *mosq, void *obj, int rc) {
   if (rc == 0) {
@@ -221,6 +242,7 @@ int main() {
         if (strcmp(types[t], "SYS") == 0) {
           int cpu = get_cpu_usage();
           int mem = get_memory_usage();
+          double cpu_temp = get_cpu_temperature();
           time_t now = time(NULL);
           char sys_time_str[64];
           strftime(sys_time_str, sizeof(sys_time_str), "%Y-%m-%d %H:%M:%S",
@@ -281,11 +303,11 @@ int main() {
           snprintf(payload, sizeof(payload),
                    "{\"bacnetInstance\":\"%s\",\"systemStatus\":\"%s\","
                    "\"totalObjects\":%d,\"modules\":%d,\"activeAlarms\":%d,"
-                   "\"cpuUsage\":%d,\"memoryUsage\":%d,\"hostname\":\"%s\","
+                   "\"cpuUsage\":%d,\"memoryUsage\":%d,\"cpuTemp\":%.1f,\"hostname\":\"%s\","
                    "\"systemTime\":\"%s\",\"uptime\":%ld,\"bootTime\":\"%s\","
                    "\"events\":%s}",
                    bacnet_instance, system_status, total_objects, modules,
-                   active_alarms, cpu, mem, hostname, sys_time_str, uptime,
+                   active_alarms, cpu, mem, cpu_temp, hostname, sys_time_str, uptime,
                    boot_time_str, events_json);
         } else {
           strcpy(payload, "[");
