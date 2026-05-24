@@ -6,8 +6,8 @@ const { bacnetData, isConnected, subscribeToType, unsubscribeFromType } = useMqt
 const objects = computed(() => {
   const data = bacnetData.AI || []
   return [...data].sort((a, b) => {
-    const idA = parseInt(a.id.split(':')[1], 10)
-    const idB = parseInt(b.id.split(':')[1], 10)
+    const idA = parseInt(a.id?.split(':')[1] || 0, 10)
+    const idB = parseInt(b.id?.split(':')[1] || 0, 10)
     return idA - idB
   })
 })

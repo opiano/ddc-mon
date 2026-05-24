@@ -56,7 +56,20 @@ export function useMqtt() {
       if (updateMatch) {
         try {
           const type = updateMatch[1]
-          const payload = JSON.parse(message.toString())
+          let rawMessage = message.toString().trim()
+
+          // 1. If payload contains multiple objects separated by commas but lacks outer array brackets, wrap them
+          if (type !== 'DEV' && rawMessage.startsWith('{') && !rawMessage.startsWith('[')) {
+            if (rawMessage.endsWith(',')) {
+              rawMessage = rawMessage.slice(0, -1)
+            }
+            rawMessage = '[' + rawMessage + ']'
+          }
+
+          // 2. Remove illegal trailing commas inside arrays or objects to prevent parser crashes
+          const sanitizedMessage = rawMessage.replace(/,\s*([\]}])/g, '$1')
+
+          const payload = JSON.parse(sanitizedMessage)
           
           if (type === 'DEV') {
              bacnetData.DEV = payload
@@ -64,7 +77,7 @@ export function useMqtt() {
              bacnetData[type] = payload
           } else if (payload.type && Array.isArray(payload.objects)) {
              if (bacnetData[payload.type] !== undefined) {
-               bacnetData[payload.type] = payload.objects
+                bacnetData[payload.type] = payload.objects
              }
           }
         } catch (e) {
