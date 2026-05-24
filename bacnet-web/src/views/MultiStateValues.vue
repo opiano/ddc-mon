@@ -76,7 +76,7 @@ const closeModal = () => {
         <thead class="sticky top-0 z-20 bg-surface-container-high shadow-md">
           <tr>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-6">Instance ID</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest">Port/Module</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest">PORT/MOD/CH</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest  ">Object Name</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-right ">Present Value</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-center w-12">Pri</th>
