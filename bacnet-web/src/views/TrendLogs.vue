@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType } = useMqtt()
 const objects = computed(() => {
-  const data = bacnetData.TL || []
+  const data = bacnetData.TLOG || []
   return [...data].sort((a, b) => {
     const idA = parseInt(a.id?.split(':')[1] || 0, 10)
     const idB = parseInt(b.id?.split(':')[1] || 0, 10)
@@ -26,11 +26,11 @@ const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.v
 const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
 
 onMounted(() => {
-  subscribeToType('TL')
+  subscribeToType('TLOG')
 })
 
 onUnmounted(() => {
-  unsubscribeFromType('TL')
+  unsubscribeFromType('TLOG')
 })
 </script>
 <template>

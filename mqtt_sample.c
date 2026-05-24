@@ -12,9 +12,9 @@
 #define MQTT_KEEP_ALIVE 60
 
 // 웹에서 요청한 타입만 추적하기 위한 플래그 배열
-// AI, AO, AV, BI, BO, BV, MSV, SYS, CAL, SCH, TL (총 11개)
+// AI, AO, AV, BI, BO, BV, MSV, SYS, CAL, SCH, TLOG (총 11개)
 bool active_types[11] = {false, false, false, false, false, false, false, false, false, false, false};
-const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "SYS", "CAL", "SCH", "TL"};
+const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "SYS", "CAL", "SCH", "TLOG"};
 const int num_types = 11;
 
 int get_type_index(const char *type) {
@@ -394,7 +394,7 @@ int main() {
               snprintf(obj, sizeof(obj),
                        "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"logRef\":\"%s\"}%s",
                        types[t], id, name, pv, effectivePeriod, scheduleDefault, logRef, (i == 100) ? "" : ",");
-            } else if (strcmp(types[t], "TL") == 0) {
+            } else if (strcmp(types[t], "TLOG") == 0) {
               int id = i;
               char name[64];
               snprintf(name, sizeof(name), "TrendLog Node %d", i);
