@@ -50,8 +50,8 @@ onUnmounted(() => {
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Present Value</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Effective Period</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Schedule Default</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Log Ref</th>
-            <th class="w-10"></th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">OBJ REF</th>
+            <th class="w-10 pl-4"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-outline-variant/5">
@@ -65,13 +65,13 @@ onUnmounted(() => {
             </td>
           </tr>
           <tr v-for="obj in paginatedObjects" :key="obj.id" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer">
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-6">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pv }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.effPeriod || '-' }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.schDef || '-' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.logRef || '-' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4 text-center"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.objRef || obj.logRef || '-' }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
           </tr>
         </tbody>
       </table>

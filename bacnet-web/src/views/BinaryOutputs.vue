@@ -71,13 +71,13 @@ const closeModal = () => {
         <thead class="sticky top-0 z-20 bg-surface-container-high shadow-md">
           <tr>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-6">Instance ID</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest">PORT/MOD/CH</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest  ">Object Name</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-right ">Present Value</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-center w-12">Pri</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest text-center ">Status</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest  ">Reliability</th>
-            <th class="w-10"></th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">PORT/MOD/CH</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Object Name</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Present Value</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Pri</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Status</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Reliability</th>
+            <th class="w-10 pl-4"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-outline-variant/5">
@@ -91,7 +91,7 @@ const closeModal = () => {
             </td>
           </tr>
           <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error-container/5': obj.sts === 'FAULT' || obj.sts === 'Fault', 'bg-tertiary/5': obj.sts === 'OFFLINE' }">
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.id }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-6">{{ obj.id }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">

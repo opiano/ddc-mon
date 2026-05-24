@@ -388,12 +388,12 @@ int main() {
               const char *pv = (i % 3 == 0) ? "Active" : "Inactive";
               const char *effectivePeriod = "2024-01-01 - 2024-12-31";
               const char *scheduleDefault = "Inactive";
-              char logRef[32];
-              snprintf(logRef, sizeof(logRef), "BO:%d", i);
+              char objRef[32];
+              snprintf(objRef, sizeof(objRef), "BO:%d", i);
 
               snprintf(obj, sizeof(obj),
-                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"logRef\":\"%s\"}%s",
-                       types[t], id, name, pv, effectivePeriod, scheduleDefault, logRef, (i == 100) ? "" : ",");
+                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"objRef\":\"%s\"}%s",
+                       types[t], id, name, pv, effectivePeriod, scheduleDefault, objRef, (i == 100) ? "" : ",");
             } else if (strcmp(types[t], "TLOG") == 0) {
               int id = i;
               char name[64];
