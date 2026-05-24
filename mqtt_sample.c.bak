@@ -1,200 +1,9 @@
-#include <mosquitto.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-
-// 브로커 설정 (라즈베리파이 내부 로컬 접속)
-#define MQTT_HOST "127.0.0.1"
-#define MQTT_PORT 1883
-#define MQTT_KEEP_ALIVE 60
 
 // 웹에서 요청한 타입만 추적하기 위한 플래그 배열
-// AI, AO, AV, BI, BO, BV, MSV, DEV, CAL, SCH, TLOG (총 11개)
+// AI, AO, AV, BI, BO, BV, MSV, SYS, CAL, SCH, TLOG (총 11개)
 bool active_types[11] = {false, false, false, false, false, false, false, false, false, false, false};
-const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG"};
+const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "SYS", "CAL", "SCH", "TLOG"};
 const int num_types = 11;
-
-int get_type_index(const char *type) {
-  for (int i = 0; i < num_types; i++) {
-    if (strcmp(types[i], type) == 0)
-      return i;
-  }
-  return -1;
-}
-
-// Global variables to store previous CPU stat
-static unsigned long long prev_total = 0;
-static unsigned long long prev_idle = 0;
-
-int get_cpu_usage() {
-  FILE *fp = fopen("/proc/stat", "r");
-  if (!fp)
-    return 0;
-
-  char buffer[1024];
-  if (!fgets(buffer, sizeof(buffer), fp)) {
-    fclose(fp);
-    return 0;
-  }
-  fclose(fp);
-
-  unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
-  if (sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu", &user,
-             &nice, &system, &idle, &iowait, &irq, &softirq, &steal) < 8) {
-    return 0;
-  }
-
-  unsigned long long total_idle = idle + iowait;
-  unsigned long long total_non_idle =
-      user + nice + system + irq + softirq + steal;
-  unsigned long long total = total_idle + total_non_idle;
-
-  int usage = 0;
-  if (prev_total != 0) {
-    unsigned long long total_diff = total - prev_total;
-    unsigned long long idle_diff = total_idle - prev_idle;
-    if (total_diff > 0) {
-      usage = (int)(((total_diff - idle_diff) * 100) / total_diff);
-    }
-  }
-
-  prev_total = total;
-  prev_idle = total_idle;
-
-  return usage;
-}
-
-int get_memory_usage() {
-  FILE *fp = fopen("/proc/meminfo", "r");
-  if (!fp)
-    return 0;
-
-  char buffer[256];
-  unsigned long long mem_total = 0, mem_available = 0, mem_free = 0,
-                     buffers = 0, cached = 0;
-
-  while (fgets(buffer, sizeof(buffer), fp)) {
-    if (strncmp(buffer, "MemTotal:", 9) == 0) {
-      sscanf(buffer, "MemTotal: %llu", &mem_total);
-    } else if (strncmp(buffer, "MemAvailable:", 13) == 0) {
-      sscanf(buffer, "MemAvailable: %llu", &mem_available);
-    } else if (strncmp(buffer, "MemFree:", 8) == 0) {
-      sscanf(buffer, "MemFree: %llu", &mem_free);
-    } else if (strncmp(buffer, "Buffers:", 8) == 0) {
-      sscanf(buffer, "Buffers: %llu", &buffers);
-    } else if (strncmp(buffer, "Cached:", 7) == 0) {
-      sscanf(buffer, "Cached: %llu", &cached);
-    }
-  }
-  fclose(fp);
-
-  if (mem_total == 0)
-    return 0;
-
-  unsigned long long used = 0;
-  if (mem_available > 0) {
-    used = mem_total - mem_available;
-  } else {
-    used = mem_total - (mem_free + buffers + cached);
-  }
-
-  return (int)((used * 100) / mem_total);
-}
-
-double get_cpu_temperature() {
-  FILE *fp = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
-  if (!fp) {
-    // Return a simulated temperature between 45.0°C and 70.0°C
-    static double sim_temp = 45.0;
-    sim_temp += ((rand() % 20) - 10) / 10.0;
-    if (sim_temp < 35.0) sim_temp = 35.0;
-    if (sim_temp > 75.0) sim_temp = 75.0;
-    return sim_temp;
-  }
-  long temp_raw = 0;
-  if (fscanf(fp, "%ld", &temp_raw) != 1) {
-    temp_raw = 0;
-  }
-  fclose(fp);
-  if (temp_raw > 0) {
-    return temp_raw / 1000.0;
-  }
-  return 45.0;
-}
-
-// 브로커 접속 완료 시 호출되는 콜백 함수
-void on_connect(struct mosquitto *mosq, void *obj, int rc) {
-  if (rc == 0) {
-    printf("✅ 브로커에 성공적으로 연결되었습니다.\n");
-    // 요청 및 제어 토픽 구독
-    mosquitto_subscribe(mosq, NULL, "bacnet/request/#", 0);
-    mosquitto_subscribe(mosq, NULL, "bacnet/command/#", 0);
-    printf("📡 웹 요청(subscribe/unsubscribe) 및 제어(write) 토픽 수신 대기 "
-           "중...\n");
-  } else {
-    printf("❌ 연결 실패, 반환 코드: %d\n", rc);
-  }
-}
-
-// 메시지 수신 시 호출되는 콜백 함수
-void on_message(struct mosquitto *mosq, void *obj,
-                const struct mosquitto_message *msg) {
-  // 1. 데이터 구독 요청 처리
-  if (strncmp(msg->topic, "bacnet/request/subscribe/", 25) == 0) {
-    const char *type = msg->topic + 25;
-    int idx = get_type_index(type);
-    if (idx >= 0) {
-      active_types[idx] = true;
-      printf("▶️  웹 요청 수신: [%s] 데이터 전송 시작\n", type);
-    }
-  }
-  // 2. 데이터 구독 해제 요청 처리
-  else if (strncmp(msg->topic, "bacnet/request/unsubscribe/", 27) == 0) {
-    const char *type = msg->topic + 27;
-    int idx = get_type_index(type);
-    if (idx >= 0) {
-      active_types[idx] = false;
-      printf("⏸  웹 요청 수신: [%s] 데이터 전송 중지\n", type);
-    }
-  }
-  // 3. 제어(Write) 명령 처리
-  else if (strncmp(msg->topic, "bacnet/command/write/", 21) == 0) {
-    // 토픽 형식: bacnet/command/write/<TYPE>/<ID>
-    const char *path = msg->topic + 21;
-    char type[16] = {0};
-    char id[32] = {0};
-
-    // type과 id 추출
-    if (sscanf(path, "%15[^/]/%31s", type, id) == 2) {
-      // 페이로드 파싱 (형식: "value,priority")
-      if (msg->payloadlen > 0) {
-        char payload_str[256] = {0};
-        snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
-                 (char *)msg->payload);
-
-        char value[128] = {0};
-        int priority = 0; // BACnet 우선순위 (1~16, 0이면 생략 등)
-
-        if (sscanf(payload_str, "%[^,],%d", value, &priority) >= 1) {
-          printf("\n⚡ [제어 명령 수신] 대상: %s:%s | 변경 값(Present Value): "
-                 "%s | 우선순위(Priority): %d\n\n",
-                 type, id, value, priority);
-        } else {
-          printf("⚠️ 제어 페이로드 파싱 실패: %s\n", payload_str);
-        }
-      }
-    }
-  }
-}
-
-// Publish 완료 시 호출되는 콜백 함수 (로그가 너무 많아지므로 주석 처리하거나
-// 단순화)
-void on_publish(struct mosquitto *mosq, void *obj, int mid) {
-  // printf("📨 메시지(ID: %d) 전송 완료.\n", mid);
-}
 
 int main() {
   struct mosquitto *mosq = NULL;
@@ -239,7 +48,7 @@ int main() {
       if (active_types[t]) {
         char payload[32768];
 
-        if (strcmp(types[t], "DEV") == 0) {
+        if (strcmp(types[t], "SYS") == 0) {
           int cpu = get_cpu_usage();
           int mem = get_memory_usage();
           double cpu_temp = get_cpu_temperature();
@@ -439,4 +248,85 @@ int main() {
   mosquitto_lib_cleanup();
 
   return 0;
+}
+
+int get_type_index(const char *type) {
+  for (int i = 0; i < num_types; i++) {
+    if (strcmp(types[i], type) == 0)
+      return i;
+  }
+  return -1;
+}
+
+
+
+// 브로커 접속 완료 시 호출되는 콜백 함수
+void on_connect(struct mosquitto *mosq, void *obj, int rc) {
+  if (rc == 0) {
+    printf("✅ 브로커에 성공적으로 연결되었습니다.\n");
+    // 요청 및 제어 토픽 구독
+    mosquitto_subscribe(mosq, NULL, "bacnet/request/#", 0);
+    mosquitto_subscribe(mosq, NULL, "bacnet/command/#", 0);
+    printf("📡 웹 요청(subscribe/unsubscribe) 및 제어(write) 토픽 수신 대기 "
+           "중...\n");
+  } else {
+    printf("❌ 연결 실패, 반환 코드: %d\n", rc);
+  }
+}
+
+// 메시지 수신 시 호출되는 콜백 함수
+void on_message(struct mosquitto *mosq, void *obj,
+                const struct mosquitto_message *msg) {
+  // 1. 데이터 구독 요청 처리
+  if (strncmp(msg->topic, "bacnet/request/subscribe/", 25) == 0) {
+    const char *type = msg->topic + 25;
+    int idx = get_type_index(type);
+    if (idx >= 0) {
+      active_types[idx] = true;
+      printf("▶️  웹 요청 수신: [%s] 데이터 전송 시작\n", type);
+    }
+  }
+  // 2. 데이터 구독 해제 요청 처리
+  else if (strncmp(msg->topic, "bacnet/request/unsubscribe/", 27) == 0) {
+    const char *type = msg->topic + 27;
+    int idx = get_type_index(type);
+    if (idx >= 0) {
+      active_types[idx] = false;
+      printf("⏸  웹 요청 수신: [%s] 데이터 전송 중지\n", type);
+    }
+  }
+  // 3. 제어(Write) 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/write/", 21) == 0) {
+    // 토픽 형식: bacnet/command/write/<TYPE>/<ID>
+    const char *path = msg->topic + 21;
+    char type[16] = {0};
+    char id[32] = {0};
+
+    // type과 id 추출
+    if (sscanf(path, "%15[^/]/%31s", type, id) == 2) {
+      // 페이로드 파싱 (형식: "value,priority")
+      if (msg->payloadlen > 0) {
+        char payload_str[256] = {0};
+        snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+                 (char *)msg->payload);
+
+        char value[128] = {0};
+        int priority = 0; // BACnet 우선순위 (1~16, 0이면 생략 등)
+
+        if (sscanf(payload_str, "%[^,],%d", value, &priority) >= 1) {
+          printf("\n⚡ [제어 명령 수신] 대상: %s:%s | 변경 값(Present Value): "
+                 "%s | 우선순위(Priority): %d\n\n",
+                 type, id, value, priority);
+        } else {
+          printf("⚠️ 제어 페이로드 파싱 실패: %s\n", payload_str);
+        }
+      }
+    }
+  }
+}
+
+// Publish 완료 시 호출되는 콜백 함수 (로그가 너무 많아지므로 주석 처리하거나
+// 단순화)
+void on_publish(struct mosquitto *mosq, void *obj, int mid) {
+  // printf("📨 메시지(ID: %d) 전송 완료.\n", mid);
 }

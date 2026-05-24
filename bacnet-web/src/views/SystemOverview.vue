@@ -4,10 +4,10 @@ import { computed, onMounted, onUnmounted } from 'vue'
 
 const { bacnetData, subscribeToType, unsubscribeFromType } = useMqtt()
 
-onMounted(() => subscribeToType('SYS'))
-onUnmounted(() => unsubscribeFromType('SYS'))
+onMounted(() => subscribeToType('DEV'))
+onUnmounted(() => unsubscribeFromType('DEV'))
 
-const sysData = computed(() => bacnetData.SYS || {
+const sysData = computed(() => bacnetData.DEV || {
   bacnetInstance: '-',
   systemStatus: '-',
   totalObjects: 0,

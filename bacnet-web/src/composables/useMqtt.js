@@ -17,7 +17,7 @@ const bacnetData = reactive({
   CAL: [],
   SCH: [],
   TLOG: [],
-  SYS: null
+  DEV: null
 })
 
 let client = null
@@ -58,8 +58,8 @@ export function useMqtt() {
           const type = updateMatch[1]
           const payload = JSON.parse(message.toString())
           
-          if (type === 'SYS') {
-             bacnetData.SYS = payload
+          if (type === 'DEV') {
+             bacnetData.DEV = payload
           } else if (bacnetData[type] !== undefined && Array.isArray(payload)) {
              bacnetData[type] = payload
           } else if (payload.type && Array.isArray(payload.objects)) {
