@@ -65,7 +65,7 @@ const closeModal = () => {
     <!-- Header / Breadcrumbs -->
     <div class="px-6 py-2 flex items-center justify-between border-b border-outline-variant/10 bg-surface-container-low/30">
       <div class="flex items-center gap-4">
-        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">FBD (Function Block Diagram)</h1>
+        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">Function Block Diagram</h1>
         <span class="text-sm text-slate-500 font-medium">{{ objects.length }} objects discovered</span>
       </div>
     </div>
