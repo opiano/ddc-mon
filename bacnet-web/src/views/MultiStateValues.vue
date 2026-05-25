@@ -33,25 +33,33 @@ const showModal = ref(false)
 const selectedObject = ref(null)
 const controlValue = ref(1)
 const controlPriority = ref(8)
+const isNullChecked = ref(false)
 
 const openControlModal = (obj) => {
   selectedObject.value = obj
   controlValue.value = 1 // Default to 1 for MSV as it's often hard to reverse-map text to state
   const priVal = parseInt(obj.pri, 10)
   controlPriority.value = (priVal >= 1 && priVal <= 16) ? priVal : 16
+  isNullChecked.value = (obj.pv === null || obj.pv === 'Null' || obj.pv === 'null')
   showModal.value = true
 }
 
 const submitControl = () => {
   if (!selectedObject.value) return
-  const parsedValue = parseInt(controlValue.value, 10)
-  if (isNaN(parsedValue) || parsedValue < 1) {
-    alert("Invalid value. Must be an integer >= 1")
-    return
+  let valueToSend
+  if (isNullChecked.value) {
+    valueToSend = 'Null'
+  } else {
+    const parsedValue = parseInt(controlValue.value, 10)
+    if (isNaN(parsedValue) || parsedValue < 1) {
+      alert("Invalid value. Must be an integer >= 1")
+      return
+    }
+    valueToSend = parsedValue
   }
   
   const [type, idNum] = selectedObject.value.id.split(':')
-  writeValue(type, idNum, parsedValue, parseInt(controlPriority.value, 10))
+  writeValue(type, idNum, valueToSend, parseInt(controlPriority.value, 10))
   
   showModal.value = false
 }
@@ -157,9 +165,16 @@ const closeModal = () => {
             <label class="block text-sm font-bold text-slate-400 mb-1">Object</label>
             <div class="text-on-surface font-mono bg-surface-container p-2 rounded border border-outline-variant/10">{{ selectedObject?.id }} - {{ selectedObject?.name }}</div>
           </div>
+          <!-- Present Value with NULL checkbox -->
           <div>
-            <label class="block text-sm font-bold text-slate-400 mb-1">Present Value (State Index)</label>
-            <input type="number" min="1" step="1" v-model="controlValue" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface focus:outline-none focus:border-primary transition-colors" />
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm font-bold text-slate-400">Present Value (State Index)</label>
+              <label class="flex items-center gap-1.5 text-xs text-slate-400 cursor-pointer select-none">
+                <input type="checkbox" v-model="isNullChecked" class="rounded bg-[#06122d] border-[#2b4680]/30 text-[#7bd0ff] focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5" />
+                <span>NULL</span>
+              </label>
+            </div>
+            <input :disabled="isNullChecked" type="number" min="1" step="1" v-model="controlValue" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface focus:outline-none focus:border-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors" />
           </div>
           <div>
             <label class="block text-sm font-bold text-slate-400 mb-1">Priority</label>
