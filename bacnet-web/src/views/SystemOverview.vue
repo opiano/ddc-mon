@@ -32,10 +32,67 @@ const formatUptime = (seconds) => {
   return `${d} days, ${h} hours, ${m} min, ${s} sec`;
 }
 
-const sortedEvents = computed(() => {
-  const events = [...(sysData.value.events || [])]
-  return events.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 5)
+const activeTempColor = computed(() => {
+  const temp = sysData.value.cpuTemp || 0
+  if (temp >= 70) return '#ee7d77' // Danger (Error Red)
+  if (temp >= 50) return '#ffb148' // Warning (Tertiary Amber)
+  return '#10b981' // Normal (Emerald Green)
 })
+
+const sortedEvents = computed(() => {
+  if (!sysData.value.events || !Array.isArray(sysData.value.events)) {
+    return []
+  }
+  return [...sysData.value.events]
+    .filter(e => e && e.timestamp)
+    .sort((a, b) => {
+      const dateA = new Date(a.timestamp.replace(/-/g, '/'))
+      const dateB = new Date(b.timestamp.replace(/-/g, '/'))
+      return dateB.getTime() - dateA.getTime()
+    })
+    .slice(0, 5)
+})
+
+const exportAlarms = () => {
+  if (!sysData.value.events || !Array.isArray(sysData.value.events)) {
+    alert('No active alarms to export.')
+    return
+  }
+  
+  const eventsToExport = [...sysData.value.events]
+    .filter(e => e && e.timestamp)
+    .sort((a, b) => {
+      const dateA = new Date(a.timestamp.replace(/-/g, '/'))
+      const dateB = new Date(b.timestamp.replace(/-/g, '/'))
+      return dateB.getTime() - dateA.getTime()
+    })
+
+  if (eventsToExport.length === 0) {
+    alert('No active alarms to export.')
+    return
+  }
+
+  // Build CSV content
+  const headers = ['Timestamp', 'Event State', 'Object Name', 'Object ID']
+  const rows = eventsToExport.map(e => [
+    `"${e.timestamp || ''}"`,
+    `"${e.eventState || ''}"`,
+    `"${e.objectName || ''}"`,
+    `"${e.objectId || ''}"`
+  ])
+  
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n') // UTF-8 BOM for Excel compatibility in Korean
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `active_alarms_${new Date().toISOString().split('T')[0]}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 </script>
 <template>
   <div class="p-4 flex-1 overflow-auto bg-surface-dim">
@@ -110,8 +167,21 @@ const sortedEvents = computed(() => {
     <!-- CPU Temperature 240-degree Needle Gauge -->
     <div class="flex flex-col items-center justify-center relative">
     <svg class="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36" viewBox="0 0 128 128">
-    <!-- 240-degree circular arc matching radius 54 -->
-    <path d="M 17.24,91 A 54,54 0 1,1 110.76,91" fill="transparent" stroke="var(--color-outline-variant, #2b4680)" stroke-width="8" stroke-linecap="round" class="text-surface-container-highest" />
+    <!-- 240-degree circular base track split into gorgeous colored segments -->
+    <!-- Normal Range (0 to 50°C): Emerald Green -->
+    <path d="M 17.24,91 A 54,54 0 0,1 64,10" fill="transparent" stroke="#10b981" stroke-width="8" stroke-linecap="round" class="opacity-20" />
+    <!-- Warning Range (50 to 70°C): Tertiary Amber -->
+    <path d="M 64,10 A 54,54 0 0,1 104.13,27.87" fill="transparent" stroke="#ffb148" stroke-width="8" class="opacity-20" />
+    <!-- Danger Range (70 to 100°C): Error Red -->
+    <path d="M 104.13,27.87 A 54,54 0 0,1 110.76,91" fill="transparent" stroke="#ee7d77" stroke-width="8" stroke-linecap="round" class="opacity-20" />
+    
+    <!-- Active Progress Segments overlayed dynamically -->
+    <!-- Normal Range Active (0 to 50°C): Emerald Green -->
+    <path d="M 17.24,91 A 54,54 0 0,1 64,10" fill="transparent" stroke="#10b981" stroke-dasharray="113.10" :stroke-dashoffset="113.10 - (113.10 * Math.min(Math.max(sysData.cpuTemp || 0, 0), 50) / 50)" stroke-width="8" stroke-linecap="round" class="transition-all duration-500 ease-out" />
+    <!-- Warning Range Active (50 to 70°C): Tertiary Amber -->
+    <path d="M 64,10 A 54,54 0 0,1 104.13,27.87" fill="transparent" stroke="#ffb148" stroke-dasharray="45.24" :stroke-dashoffset="45.24 - (45.24 * Math.min(Math.max((sysData.cpuTemp || 0) - 50, 0), 20) / 20)" stroke-width="8" class="transition-all duration-500 ease-out" />
+    <!-- Danger Range Active (70 to 100°C): Error Red -->
+    <path d="M 104.13,27.87 A 54,54 0 0,1 110.76,91" fill="transparent" stroke="#ee7d77" stroke-dasharray="67.85" :stroke-dashoffset="67.85 - (67.85 * Math.min(Math.max((sysData.cpuTemp || 0) - 70, 0), 30) / 30)" stroke-width="8" stroke-linecap="round" class="transition-all duration-500 ease-out" />
     
     <!-- Gauge Ticks -->
     <line x1="17.24" y1="91" x2="24.2" y2="87" stroke="#8f9fb7" stroke-width="2"/>
@@ -124,15 +194,15 @@ const sortedEvents = computed(() => {
     <text x="94" y="86" fill="#8f9fb7" font-size="9" text-anchor="middle" font-family="Space Grotesk" class="font-bold opacity-60">100</text>
     
     <!-- Rotating needle pointing to temp. Range 0 to 100 -> angle -120deg to 120deg (240deg total). Tip is at y=24 (radius 40) for a cleaner sweep. -->
-    <polygon points="61,64 64,24 67,64" fill="#ee7d77" :style="{ transform: `rotate(${-120 + (sysData.cpuTemp || 0) * 2.4}deg)`, transformOrigin: '64px 64px' }" class="transition-transform duration-500 ease-out" />
+    <polygon points="61,64 64,24 67,64" :fill="activeTempColor" :style="{ transform: `rotate(${-120 + Math.min(Math.max(sysData.cpuTemp || 0, 0), 100) * 2.4}deg)`, transformOrigin: '64px 64px' }" class="transition-transform duration-500 ease-out" />
     
     <!-- Center Hub -->
     <circle cx="64" cy="64" r="8" fill="#dee5ff" stroke="#060e20" stroke-width="2"/>
-    <circle cx="64" cy="64" r="3" fill="#ee7d77"/>
+    <circle cx="64" cy="64" r="3" :fill="activeTempColor"/>
     </svg>
     <div class="absolute inset-x-0 bottom-[-2px] flex flex-col items-center">
     <span class="text-[9px] sm:text-[10px] text-secondary-dim font-bold uppercase tracking-wider leading-none mb-0.5">Temp</span>
-    <span class="text-base sm:text-lg font-bold font-space text-on-surface leading-none pb-1">{{ sysData.cpuTemp ? sysData.cpuTemp.toFixed(1) : '-' }}°C</span>
+    <span class="text-base sm:text-lg font-bold font-space leading-none pb-1 transition-colors duration-300" :style="{ color: activeTempColor }" :class="{ 'animate-pulse': (sysData.cpuTemp || 0) >= 70 }">{{ sysData.cpuTemp ? sysData.cpuTemp.toFixed(1) : '-' }}°C</span>
     </div>
     </div>
     </div>
@@ -169,12 +239,9 @@ const sortedEvents = computed(() => {
     <div class="px-4 py-3 border-b border-outline-variant/10 flex justify-between items-center">
     <h3 class="font-space text-lg font-bold uppercase tracking-wider text-on-surface">Recent Events Log</h3>
     <div class="flex gap-4">
-    <button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
-    <span class="material-symbols-outlined text-sm">filter_list</span> Filter
-                            </button>
-    <button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
+    <button @click="exportAlarms" class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
     <span class="material-symbols-outlined text-sm">download</span> Export
-                            </button>
+    </button>
     </div>
     </div>
     <div class="overflow-x-auto">

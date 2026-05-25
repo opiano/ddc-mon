@@ -37,7 +37,8 @@ const controlPriority = ref(8)
 const openControlModal = (obj) => {
   selectedObject.value = obj
   controlValue.value = (obj.pv === 'Active' || obj.pv === true)
-  controlPriority.value = obj.pri || 8
+  const priVal = parseInt(obj.pri, 10)
+  controlPriority.value = (priVal >= 1 && priVal <= 16) ? priVal : 16
   showModal.value = true
 }
 

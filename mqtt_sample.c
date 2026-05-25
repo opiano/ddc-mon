@@ -12,10 +12,10 @@
 #define MQTT_KEEP_ALIVE 60
 
 // 웹에서 요청한 타입만 추적하기 위한 플래그 배열
-// AI, AO, AV, BI, BO, BV, MSV, DEV, CAL, SCH, TLOG (총 11개)
-bool active_types[11] = {false, false, false, false, false, false, false, false, false, false, false};
-const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG"};
-const int num_types = 11;
+// AI, AO, AV, BI, BO, BV, MSV, DEV, CAL, SCH, TLOG, FBD (총 12개)
+bool active_types[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG", "FBD"};
+const int num_types = 12;
 
 int get_type_index(const char *type) {
   for (int i = 0; i < num_types; i++) {
@@ -408,6 +408,19 @@ int main() {
               snprintf(obj, sizeof(obj),
                        "{\"id\":\"%s:%d\",\"name\":\"%s\",\"enable\":\"%s\",\"interval\":%d,\"logRef\":\"%s\",\"rc\":%d,\"tc\":%d}%s",
                        types[t], id, name, enable, interval, logRef, recordCount, totalCount, (i == 100) ? "" : ",");
+            } else if (strcmp(types[t], "FBD") == 0) {
+              int id = i;
+              char name[64];
+              snprintf(name, sizeof(name), "FBD Node %d", i);
+              const char *pv = ((i + cycle) % 2 == 0) ? "true" : "false";
+              int period = 1000 + i * 10;
+              int fb = 10 + i % 5;
+              int var = 20 + i % 10;
+              int link = i * 4 + 100;
+
+              snprintf(obj, sizeof(obj),
+                       "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":%s,\"period\":%d,\"fb\":%d,\"var\":%d,\"link\":%d}%s",
+                       types[t], id, name, pv, period, fb, var, link, (i == 100) ? "" : ",");
             }
 
             strcat(payload, obj);

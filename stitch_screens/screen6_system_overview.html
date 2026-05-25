@@ -277,8 +277,21 @@
 <!-- CPU Temperature 240-degree Needle Gauge -->
 <div class="flex flex-col items-center justify-center relative">
 <svg class="w-28 h-28 sm:w-32 sm:h-32 lg:w-36 lg:h-36" viewBox="0 0 128 128">
-<!-- 240-degree circular arc matching radius 54 -->
-<path d="M 17.24,91 A 54,54 0 1,1 110.76,91" fill="transparent" stroke="var(--color-outline-variant, #2b4680)" stroke-width="8" stroke-linecap="round" class="text-surface-container-highest" />
+<!-- 240-degree circular base track split into gorgeous colored segments -->
+<!-- Normal Range (0 to 50°C): Emerald Green -->
+<path d="M 17.24,91 A 54,54 0 0,1 64,10" fill="transparent" stroke="#10b981" stroke-width="8" stroke-linecap="round" class="opacity-20" />
+<!-- Warning Range (50 to 70°C): Tertiary Amber -->
+<path d="M 64,10 A 54,54 0 0,1 104.13,27.87" fill="transparent" stroke="#ffb148" stroke-width="8" class="opacity-20" />
+<!-- Danger Range (70 to 100°C): Error Red -->
+<path d="M 104.13,27.87 A 54,54 0 0,1 110.76,91" fill="transparent" stroke="#ee7d77" stroke-width="8" stroke-linecap="round" class="opacity-20" />
+
+<!-- Active Progress Segments overlayed dynamically -->
+<!-- Normal Range Active (filled up to 45.2°C) -->
+<path d="M 17.24,91 A 54,54 0 0,1 64,10" fill="transparent" stroke="#10b981" stroke-dasharray="113.10" stroke-dashoffset="10.86" stroke-width="8" stroke-linecap="round" class="transition-all duration-500 ease-out" />
+<!-- Warning Range Active (empty) -->
+<path d="M 64,10 A 54,54 0 0,1 104.13,27.87" fill="transparent" stroke="#ffb148" stroke-dasharray="45.24" stroke-dashoffset="45.24" stroke-width="8" class="transition-all duration-500 ease-out" />
+<!-- Danger Range Active (empty) -->
+<path d="M 104.13,27.87 A 54,54 0 0,1 110.76,91" fill="transparent" stroke="#ee7d77" stroke-dasharray="67.85" stroke-dashoffset="67.85" stroke-width="8" stroke-linecap="round" class="transition-all duration-500 ease-out" />
 
 <!-- Gauge Ticks -->
 <line x1="17.24" y1="91" x2="24.2" y2="87" stroke="#8f9fb7" stroke-width="2"/>
@@ -291,11 +304,11 @@
 <text x="94" y="86" fill="#8f9fb7" font-size="9" text-anchor="middle" font-family="Space Grotesk" class="font-bold opacity-60">100</text>
 
 <!-- Rotating needle pointing to temp. E.g. 45.2°C -> -12deg rotation. Tip is at y=24 (radius 40) for a cleaner sweep. -->
-<polygon points="61,64 64,24 67,64" fill="#ee7d77" style="transform: rotate(-12deg); transform-origin: 64px 64px;" />
+<polygon points="61,64 64,24 67,64" fill="#10b981" style="transform: rotate(-12deg); transform-origin: 64px 64px;" />
 
 <!-- Center Hub -->
 <circle cx="64" cy="64" r="8" fill="#dee5ff" stroke="#060e20" stroke-width="2"/>
-<circle cx="64" cy="64" r="3" fill="#ee7d77"/>
+<circle cx="64" cy="64" r="3" fill="#10b981"/>
 </svg>
 <div class="absolute inset-x-0 bottom-[-2px] flex flex-col items-center">
 <span class="text-[9px] sm:text-[10px] text-secondary-dim font-bold uppercase tracking-wider leading-none mb-0.5">Temp</span>
@@ -310,11 +323,8 @@
 <h3 class="font-space text-lg font-bold uppercase tracking-wider text-on-surface">Recent Events Log</h3>
 <div class="flex gap-4">
 <button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined text-sm">filter_list</span> Filter
-                        </button>
-<button class="text-xs font-bold text-secondary-dim flex items-center gap-2 px-3 py-1 bg-surface-container-highest rounded border border-outline-variant/20 hover:text-on-surface transition-colors">
 <span class="material-symbols-outlined text-sm">download</span> Export
-                        </button>
+</button>
 </div>
 </div>
 <div class="overflow-x-auto">

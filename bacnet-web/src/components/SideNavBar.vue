@@ -16,6 +16,7 @@ const navItems = [
   { name: 'Calendars', path: '/calendars', icon: 'calendar_month' },
   { name: 'Schedules', path: '/schedules', icon: 'schedule' },
   { name: 'Trend Logs', path: '/trend-logs', icon: 'show_chart' },
+  { name: 'FBD', path: '/fbd', icon: 'schema' },
 ]
 
 

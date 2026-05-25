@@ -3,11 +3,12 @@ import { useMqtt } from '../composables/useMqtt'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, writeValue } = useMqtt()
+
 const objects = computed(() => {
-  const data = bacnetData.BV || []
+  const data = bacnetData.FBD || []
   return [...data].sort((a, b) => {
-    const idA = parseInt(a.id.split(':')[1], 10)
-    const idB = parseInt(b.id.split(':')[1], 10)
+    const idA = parseInt(a.id?.split(':')[1] || 0, 10)
+    const idB = parseInt(b.id?.split(':')[1] || 0, 10)
     return idA - idB
   })
 })
@@ -25,28 +26,30 @@ const paginatedObjects = computed(() => {
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++ }
 const prevPage = () => { if (currentPage.value > 1) currentPage.value-- }
 
-onMounted(() => subscribeToType('BV'))
-onUnmounted(() => unsubscribeFromType('BV'))
+onMounted(() => {
+  subscribeToType('FBD')
+})
+
+onUnmounted(() => {
+  unsubscribeFromType('FBD')
+})
 
 // Control Modal State
 const showModal = ref(false)
 const selectedObject = ref(null)
 const controlValue = ref(false)
-const controlPriority = ref(8)
 
 const openControlModal = (obj) => {
   selectedObject.value = obj
-  controlValue.value = (obj.pv === 'Active' || obj.pv === true)
-  const priVal = parseInt(obj.pri, 10)
-  controlPriority.value = (priVal >= 1 && priVal <= 16) ? priVal : 16
+  controlValue.value = (obj.pv === true || obj.pv === 'true')
   showModal.value = true
 }
 
 const submitControl = () => {
   if (!selectedObject.value) return
   const [type, idNum] = selectedObject.value.id.split(':')
-  const valueStr = controlValue.value ? 'Active' : 'Inactive'
-  writeValue(type, idNum, valueStr, parseInt(controlPriority.value, 10))
+  const valueBool = !!controlValue.value
+  writeValue(type, idNum, valueBool, 16)
   
   showModal.value = false
 }
@@ -56,28 +59,29 @@ const closeModal = () => {
   selectedObject.value = null
 }
 </script>
+
 <template>
   <div class="flex flex-col h-full bg-[#060e20]">
     <!-- Header / Breadcrumbs -->
     <div class="px-6 py-2 flex items-center justify-between border-b border-outline-variant/10 bg-surface-container-low/30">
       <div class="flex items-center gap-4">
-        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">Binary Values</h1>
+        <h1 class="headline-font text-2xl font-bold text-on-surface tracking-tight">FBD (Function Block Diagram)</h1>
         <span class="text-sm text-slate-500 font-medium">{{ objects.length }} objects discovered</span>
       </div>
-      
     </div>
+    
     <!-- Table Container -->
     <div class="flex-1 overflow-auto no-scrollbar">
       <table class="w-full text-left border-collapse high-density-table">
         <thead class="sticky top-0 z-20 bg-surface-container-high shadow-md">
           <tr>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-6">Instance ID</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">PORT/MOD/CH</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Object Name</th>
             <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Present Value</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Pri</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Status</th>
-            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Reliability</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">Period</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">FB</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">VAR</th>
+            <th class="text-sm font-bold text-slate-500 uppercase tracking-widest pl-4">LINK</th>
             <th class="w-10 pl-4"></th>
           </tr>
         </thead>
@@ -88,28 +92,30 @@ const closeModal = () => {
                 <span class="material-symbols-outlined animate-spin">sync</span>
                 Connecting to MQTT Broker...
               </div>
-              <div v-else>No Binary Value objects found.</div>
+              <div v-else>No FBD objects found.</div>
             </td>
           </tr>
-          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer" :class="{ 'bg-error-container/5': obj.sts === 'FAULT' || obj.sts === 'Fault', 'bg-tertiary/5': obj.sts === 'OFFLINE' }">
+          <tr v-for="obj in paginatedObjects" :key="obj.id" @click="openControlModal(obj)" class="group hover:bg-surface-bright/50 transition-colors cursor-pointer">
             <td class="text-sm text-slate-400 font-mono py-1 pl-6">{{ obj.id }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.port }}</td>
             <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.name }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">
-              <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded text-sm font-bold uppercase"
-                   :class="obj.pv === 'Active' || obj.pv === true ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-slate-500/10 border border-slate-500/20 text-slate-500'">
-                <span class="w-1.5 h-1.5 rounded-full" :class="obj.pv === 'Active' || obj.pv === true ? 'bg-emerald-500' : 'bg-slate-600'"></span>
-                {{ obj.pv === true ? 'Active' : (obj.pv === false ? 'Inactive' : obj.pv) }}
-              </div>
+            <td class="text-sm font-mono py-1 pl-4">
+              <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase" 
+                    :class="obj.pv === true || obj.pv === 'true' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'">
+                {{ obj.pv === true || obj.pv === 'true' ? 'true' : 'false' }}
+              </span>
             </td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.pri || 16 }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.sts ? obj.sts.toUpperCase() : 'NORMAL' }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.rel }}</td>
-            <td class="text-sm text-slate-400 font-mono py-1 pl-4"><button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button></td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.period }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.fb }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.var }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4">{{ obj.link }}</td>
+            <td class="text-sm text-slate-400 font-mono py-1 pl-4 text-center">
+              <button class="material-symbols-outlined text-sm text-slate-600 group-hover:text-primary">more_vert</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
+    
     <!-- Status Footer -->
     <footer class="px-4 md:px-6 pt-3 pb-6 md:py-2 bg-surface-container-high border-t border-outline-variant/10 flex flex-col md:flex-row gap-3 md:gap-0 md:items-center justify-between text-sm font-bold text-slate-500 uppercase tracking-widest">
       <div class="flex items-center gap-4">
@@ -147,14 +153,8 @@ const closeModal = () => {
           <div>
             <label class="block text-sm font-bold text-slate-400 mb-1">Present Value</label>
             <select v-model="controlValue" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none">
-              <option :value="true">Active</option>
-              <option :value="false">Inactive</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-bold text-slate-400 mb-1">Priority</label>
-            <select v-model="controlPriority" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface focus:outline-none focus:border-primary transition-colors appearance-none">
-              <option v-for="n in 16" :key="n" :value="n">{{ n }}</option>
+              <option :value="true">true</option>
+              <option :value="false">false</option>
             </select>
           </div>
         </div>

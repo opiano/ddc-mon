@@ -17,11 +17,71 @@ const bacnetData = reactive({
   CAL: [],
   SCH: [],
   TLOG: [],
+  FBD: [],
   DEV: null
 })
 
 let client = null
 const activeSubscriptions = new Set()
+
+// Helper to sanitize malformed JSON from MQTT, including trailing commas and mismatched brackets/braces (e.g., arrays ending in } instead of ])
+function sanitizeMqttMessage(rawMessage) {
+  // 1. Initial cleanup of simple trailing commas
+  let sanitized = rawMessage.replace(/,\s*([\]}])/g, '$1');
+
+  // 2. Fix events array closing bracket mismatch if it exists (e.g. "events": [ ... } )
+  const eventsIndex = sanitized.indexOf('"events"');
+  if (eventsIndex !== -1) {
+    const startBracketIndex = sanitized.indexOf('[', eventsIndex);
+    if (startBracketIndex !== -1) {
+      let bracketCount = 1;
+      let braceCount = 0;
+      let inString = false;
+      let escape = false;
+
+      for (let i = startBracketIndex + 1; i < sanitized.length; i++) {
+        const char = sanitized[i];
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (char === '\\') {
+          escape = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (inString) continue;
+
+        if (char === '{') {
+          braceCount++;
+        } else if (char === '}') {
+          if (braceCount > 0) {
+            braceCount--;
+          } else {
+            // Found unmatched closing brace instead of a bracket. Correct it.
+            sanitized = sanitized.substring(0, i) + ']' + sanitized.substring(i + 1);
+            bracketCount = 0;
+            break;
+          }
+        } else if (char === '[') {
+          bracketCount++;
+        } else if (char === ']') {
+          bracketCount--;
+          if (bracketCount === 0) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Final pass to strip any remaining trailing commas
+  sanitized = sanitized.replace(/,\s*([\]}])/g, '$1');
+  return sanitized;
+}
 
 export function useMqtt() {
   const connect = () => {
@@ -66,8 +126,8 @@ export function useMqtt() {
             rawMessage = '[' + rawMessage + ']'
           }
 
-          // 2. Remove illegal trailing commas inside arrays or objects to prevent parser crashes
-          const sanitizedMessage = rawMessage.replace(/,\s*([\]}])/g, '$1')
+          // 2. Robustly sanitize message for trailing commas and mismatched array closing brackets
+          const sanitizedMessage = sanitizeMqttMessage(rawMessage)
 
           const payload = JSON.parse(sanitizedMessage)
           
