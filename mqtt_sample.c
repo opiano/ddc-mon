@@ -25,176 +25,7 @@ int get_type_index(const char *type) {
   return -1;
 }
 
-// Global variables to store previous CPU stat
-static unsigned long long prev_total = 0;
-static unsigned long long prev_idle = 0;
 
-int get_cpu_usage() {
-  FILE *fp = fopen("/proc/stat", "r");
-  if (!fp)
-    return 0;
-
-  char buffer[1024];
-  if (!fgets(buffer, sizeof(buffer), fp)) {
-    fclose(fp);
-    return 0;
-  }
-  fclose(fp);
-
-  unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
-  if (sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu", &user,
-             &nice, &system, &idle, &iowait, &irq, &softirq, &steal) < 8) {
-    return 0;
-  }
-
-  unsigned long long total_idle = idle + iowait;
-  unsigned long long total_non_idle =
-      user + nice + system + irq + softirq + steal;
-  unsigned long long total = total_idle + total_non_idle;
-
-  int usage = 0;
-  if (prev_total != 0) {
-    unsigned long long total_diff = total - prev_total;
-    unsigned long long idle_diff = total_idle - prev_idle;
-    if (total_diff > 0) {
-      usage = (int)(((total_diff - idle_diff) * 100) / total_diff);
-    }
-  }
-
-  prev_total = total;
-  prev_idle = total_idle;
-
-  return usage;
-}
-
-int get_memory_usage() {
-  FILE *fp = fopen("/proc/meminfo", "r");
-  if (!fp)
-    return 0;
-
-  char buffer[256];
-  unsigned long long mem_total = 0, mem_available = 0, mem_free = 0,
-                     buffers = 0, cached = 0;
-
-  while (fgets(buffer, sizeof(buffer), fp)) {
-    if (strncmp(buffer, "MemTotal:", 9) == 0) {
-      sscanf(buffer, "MemTotal: %llu", &mem_total);
-    } else if (strncmp(buffer, "MemAvailable:", 13) == 0) {
-      sscanf(buffer, "MemAvailable: %llu", &mem_available);
-    } else if (strncmp(buffer, "MemFree:", 8) == 0) {
-      sscanf(buffer, "MemFree: %llu", &mem_free);
-    } else if (strncmp(buffer, "Buffers:", 8) == 0) {
-      sscanf(buffer, "Buffers: %llu", &buffers);
-    } else if (strncmp(buffer, "Cached:", 7) == 0) {
-      sscanf(buffer, "Cached: %llu", &cached);
-    }
-  }
-  fclose(fp);
-
-  if (mem_total == 0)
-    return 0;
-
-  unsigned long long used = 0;
-  if (mem_available > 0) {
-    used = mem_total - mem_available;
-  } else {
-    used = mem_total - (mem_free + buffers + cached);
-  }
-
-  return (int)((used * 100) / mem_total);
-}
-
-double get_cpu_temperature() {
-  FILE *fp = fopen("/sys/class/thermal/thermal_zone0/temp", "r");
-  if (!fp) {
-    // Return a simulated temperature between 45.0°C and 70.0°C
-    static double sim_temp = 45.0;
-    sim_temp += ((rand() % 20) - 10) / 10.0;
-    if (sim_temp < 35.0) sim_temp = 35.0;
-    if (sim_temp > 75.0) sim_temp = 75.0;
-    return sim_temp;
-  }
-  long temp_raw = 0;
-  if (fscanf(fp, "%ld", &temp_raw) != 1) {
-    temp_raw = 0;
-  }
-  fclose(fp);
-  if (temp_raw > 0) {
-    return temp_raw / 1000.0;
-  }
-  return 45.0;
-}
-
-// 브로커 접속 완료 시 호출되는 콜백 함수
-void on_connect(struct mosquitto *mosq, void *obj, int rc) {
-  if (rc == 0) {
-    printf("✅ 브로커에 성공적으로 연결되었습니다.\n");
-    // 요청 및 제어 토픽 구독
-    mosquitto_subscribe(mosq, NULL, "bacnet/request/#", 0);
-    mosquitto_subscribe(mosq, NULL, "bacnet/command/#", 0);
-    printf("📡 웹 요청(subscribe/unsubscribe) 및 제어(write) 토픽 수신 대기 "
-           "중...\n");
-  } else {
-    printf("❌ 연결 실패, 반환 코드: %d\n", rc);
-  }
-}
-
-// 메시지 수신 시 호출되는 콜백 함수
-void on_message(struct mosquitto *mosq, void *obj,
-                const struct mosquitto_message *msg) {
-  // 1. 데이터 구독 요청 처리
-  if (strncmp(msg->topic, "bacnet/request/subscribe/", 25) == 0) {
-    const char *type = msg->topic + 25;
-    int idx = get_type_index(type);
-    if (idx >= 0) {
-      active_types[idx] = true;
-      printf("▶️  웹 요청 수신: [%s] 데이터 전송 시작\n", type);
-    }
-  }
-  // 2. 데이터 구독 해제 요청 처리
-  else if (strncmp(msg->topic, "bacnet/request/unsubscribe/", 27) == 0) {
-    const char *type = msg->topic + 27;
-    int idx = get_type_index(type);
-    if (idx >= 0) {
-      active_types[idx] = false;
-      printf("⏸  웹 요청 수신: [%s] 데이터 전송 중지\n", type);
-    }
-  }
-  // 3. 제어(Write) 명령 처리
-  else if (strncmp(msg->topic, "bacnet/command/write/", 21) == 0) {
-    // 토픽 형식: bacnet/command/write/<TYPE>/<ID>
-    const char *path = msg->topic + 21;
-    char type[16] = {0};
-    char id[32] = {0};
-
-    // type과 id 추출
-    if (sscanf(path, "%15[^/]/%31s", type, id) == 2) {
-      // 페이로드 파싱 (형식: "value,priority")
-      if (msg->payloadlen > 0) {
-        char payload_str[256] = {0};
-        snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
-                 (char *)msg->payload);
-
-        char value[128] = {0};
-        int priority = 0; // BACnet 우선순위 (1~16, 0이면 생략 등)
-
-        if (sscanf(payload_str, "%[^,],%d", value, &priority) >= 1) {
-          printf("\n⚡ [제어 명령 수신] 대상: %s:%s | 변경 값(Present Value): "
-                 "%s | 우선순위(Priority): %d\n\n",
-                 type, id, value, priority);
-        } else {
-          printf("⚠️ 제어 페이로드 파싱 실패: %s\n", payload_str);
-        }
-      }
-    }
-  }
-}
-
-// Publish 완료 시 호출되는 콜백 함수 (로그가 너무 많아지므로 주석 처리하거나
-// 단순화)
-void on_publish(struct mosquitto *mosq, void *obj, int mid) {
-  // printf("📨 메시지(ID: %d) 전송 완료.\n", mid);
-}
 
 int main() {
   struct mosquitto *mosq = NULL;
@@ -313,7 +144,7 @@ int main() {
           strcpy(payload, "[");
 
           for (int i = 1; i <= 100; i++) {
-            char obj[256];
+            char obj[512];
 
             if (strcmp(types[t], "AI") == 0 || strcmp(types[t], "AO") == 0 ||
                 strcmp(types[t], "AV") == 0) {
@@ -327,12 +158,17 @@ int main() {
               const char *rel = "No Fault";
               const char *oos = (i % 20 == 0) ? "true" : "false";
               int pri = (i % 5 == 0) ? 8 : 16;
+              int ed = (i % 10 == 0) ? 0 : 1;
+              float hl = 80.0;
+              float ll = 10.0;
 
               snprintf(obj, sizeof(obj),
                        "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\","
                        "\"pv\":%.1f,\"units\":\"%s\",\"sts\":\"%s\",\"rel\":\"%"
-                       "s\",\"oos\":%s,\"pri\":%d}%s",
+                       "s\",\"oos\":%s,\"pri\":%d,\"ed\":%d,"
+                       "\"hl\":%.1f,\"ll\":%.1f}%s",
                        types[t], id, name, port, pv, units, sts, rel, oos, pri,
+                       ed, hl, ll,
                        (i == 100) ? "" : ",");
             } else if (strcmp(types[t], "BI") == 0 ||
                        strcmp(types[t], "BO") == 0 ||
@@ -346,12 +182,16 @@ int main() {
               const char *rel = "No Fault";
               const char *oos = (i % 20 == 0) ? "true" : "false";
               int pri = (i % 5 == 0) ? 8 : 16;
+              int ed = (i % 10 == 0) ? 0 : 1;
+              int av = 1;
 
               snprintf(
                   obj, sizeof(obj),
                   "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\",\"pv\":\"%"
-                  "s\",\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d}%s",
+                  "s\",\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d,"
+                  "\"ed\":%d,\"av\":%d}%s",
                   types[t], id, name, port, pv, sts, rel, oos, pri,
+                  ed, av,
                   (i == 100) ? "" : ",");
             } else if (strcmp(types[t], "MSV") == 0) {
               int id = i;
@@ -364,12 +204,16 @@ int main() {
               const char *rel = "No Fault";
               const char *oos = (i % 20 == 0) ? "true" : "false";
               int pri = (i % 5 == 0) ? 8 : 16;
+              int ed = (i % 10 == 0) ? 0 : 1;
+              int av = 3;
 
               snprintf(obj, sizeof(obj),
                        "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\","
                        "\"pv\":%d,\"states\":%d,\"sts\":\"%s\",\"rel\":\"%s\","
-                       "\"oos\":%s,\"pri\":%d}%s",
+                       "\"oos\":%s,\"pri\":%d,\"ed\":%d,"
+                       "\"av\":%d}%s",
                        types[t], id, name, port, pv, states, sts, rel, oos, pri,
+                       ed, av,
                        (i == 100) ? "" : ",");
             } else if (strcmp(types[t], "CAL") == 0) {
               int id = i;
@@ -452,4 +296,128 @@ int main() {
   mosquitto_lib_cleanup();
 
   return 0;
+}
+
+// 브로커 접속 완료 시 호출되는 콜백 함수
+void on_connect(struct mosquitto *mosq, void *obj, int rc) {
+  if (rc == 0) {
+    printf("✅ 브로커에 성공적으로 연결되었습니다.\n");
+    // 요청 및 제어 토픽 구독
+    mosquitto_subscribe(mosq, NULL, "bacnet/request/#", 0);
+    mosquitto_subscribe(mosq, NULL, "bacnet/command/#", 0);
+    printf("📡 웹 요청(subscribe/unsubscribe) 및 제어(write) 토픽 수신 대기 "
+           "중...\n");
+  } else {
+    printf("❌ 연결 실패, 반환 코드: %d\n", rc);
+  }
+}
+
+
+// 메시지 수신 시 호출되는 콜백 함수
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg) {
+  // 1. 데이터 구독 요청 처리
+  if (strncmp(msg->topic, "bacnet/request/subscribe/", 25) == 0) {
+    const char *type = msg->topic + 25;
+    int idx = get_type_index(type);
+    if (idx >= 0) {
+      active_types[idx] = true;
+      printf("▶️  웹 요청 수신: [%s] 데이터 전송 시작\n", type);
+    }
+  }
+  // 2. 데이터 구독 해제 요청 처리
+  else if (strncmp(msg->topic, "bacnet/request/unsubscribe/", 27) == 0) {
+    const char *type = msg->topic + 27;
+    int idx = get_type_index(type);
+    if (idx >= 0) {
+      active_types[idx] = false;
+      printf("⏸  웹 요청 수신: [%s] 데이터 전송 중지\n", type);
+    }
+  }
+  // 3. 제어(Write) 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/write/", 21) == 0) {
+    // 토픽 형식: bacnet/command/write/<TYPE>/<ID>
+    const char *path = msg->topic + 21;
+    char type[16] = {0};
+    char id[32] = {0};
+
+    // type과 id 추출
+    if (sscanf(path, "%15[^/]/%31s", type, id) == 2) {
+      // 페이로드 파싱 (형식: "value,priority")
+      if (msg->payloadlen > 0) {
+        char payload_str[256] = {0};
+        snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+                 (char *)msg->payload);
+
+        char value[128] = {0};
+        int priority = 0; // BACnet 우선순위 (1~16, 0이면 생략 등)
+
+        if (sscanf(payload_str, "%[^,],%d", value, &priority) >= 1) {
+          printf("\n⚡ [제어 명령 수신] 대상: %s:%s | 변경 값(Present Value): "
+                 "%s | 우선순위(Priority): %d\n\n",
+                 type, id, value, priority);
+        } else {
+          printf("⚠️ 제어 페이로드 파싱 실패: %s\n", payload_str);
+        }
+      }
+    }
+  }
+  // 4. 알람 설정(Alarm) 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/alarm/", 21) == 0) {
+    // 토픽 형식: bacnet/command/alarm/<TYPE>/<ID>
+    const char *path = msg->topic + 21;
+    char type[16] = {0};
+    char id[32] = {0};
+
+    if (sscanf(path, "%15[^/]/%31s", type, id) == 2) {
+      if (msg->payloadlen > 0) {
+        char payload_str[256] = {0};
+        snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+                 (char *)msg->payload);
+
+        int ed = 0;
+        float hl = 0.0f;
+        float ll = 0.0f;
+        int av = 0;
+
+        printf("\n[Alarm Config Command Received] Target: %s:%s | Payload: %s\n",
+               type, id, payload_str);
+
+        if (strcmp(type, "AI") == 0 || strcmp(type, "AO") == 0 || strcmp(type, "AV") == 0) {
+          if (sscanf(payload_str, "%d,%f,%f", &ed, &hl, &ll) == 3) {
+            printf("   Parse Success: Event Detection Enable (ed) = %d, High Limit (hl) = %.2f, Low Limit (ll) = %.2f\n\n", ed, hl, ll);
+          } else {
+            printf("   Parse Failure: Analog alarm payload format is invalid.\n\n");
+          }
+        } else if (strcmp(type, "BI") == 0 || strcmp(type, "BV") == 0) {
+          if (sscanf(payload_str, "%d,%d", &ed, &av) == 2) {
+            printf("   Parse Success: Event Detection Enable (ed) = %d, Alarm Value (av) = %d (%s)\n\n", ed, av, av == 1 ? "ACTIVE" : "INACTIVE");
+          } else {
+            printf("   Parse Failure: Binary alarm payload format is invalid.\n\n");
+          }
+        } else if (strcmp(type, "BO") == 0) {
+          if (sscanf(payload_str, "%d", &ed) == 1) {
+            printf("   Parse Success: Event Detection Enable (ed) = %d\n\n", ed);
+          } else {
+            printf("   Parse Failure: BO alarm payload format is invalid.\n\n");
+          }
+        } else if (strcmp(type, "MSV") == 0) {
+          if (sscanf(payload_str, "%d,%d", &ed, &av) == 2) {
+            printf("   Parse Success: Event Detection Enable (ed) = %d, Alarm Value (av State Index) = %d\n\n", ed, av);
+          } else {
+            printf("   Parse Failure: MSV alarm payload format is invalid.\n\n");
+          }
+        } else {
+          printf("   Parse Failure: Unknown object type.\n\n");
+        }
+      }
+    }
+  }
+}
+
+
+
+// Publish 완료 시 호출되는 콜백 함수 (로그가 너무 많아지므로 주석 처리하거나
+// 단순화)
+void on_publish(struct mosquitto *mosq, void *obj, int mid) {
+  // printf("📨 메시지(ID: %d) 전송 완료.\n", mid);
 }

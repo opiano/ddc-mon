@@ -222,6 +222,11 @@ export function useMqtt() {
     publish(topic, message)
   }
 
+  const writeAlarmConfig = (type, id, payload) => {
+    const topic = `bacnet/command/alarm/${type}/${id}`
+    publish(topic, payload)
+  }
+
   // Automatically connect the first time this composable is used
   if (!client) {
     connect()
@@ -237,6 +242,7 @@ export function useMqtt() {
     subscribeToType,
     unsubscribeFromType,
     publish,
-    writeValue
+    writeValue,
+    writeAlarmConfig
   }
 }
