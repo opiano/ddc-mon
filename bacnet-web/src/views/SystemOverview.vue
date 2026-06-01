@@ -1,8 +1,65 @@
 <script setup>
 import { useMqtt } from '../composables/useMqtt'
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-const { bacnetData, subscribeToType, unsubscribeFromType } = useMqtt()
+const { bacnetData, subscribeToType, unsubscribeFromType, publish } = useMqtt()
+
+// Device and Time modal states
+const showDeviceModal = ref(false)
+const inputDeviceNumber = ref(100)
+const showTimeModal = ref(false)
+const inputSystemTime = ref('')
+
+const openDeviceModal = () => {
+  let instanceStr = sysData.value.bacnetInstance || ''
+  let num = parseInt(instanceStr.replace(/[^0-9]/g, ''), 10)
+  if (isNaN(num)) num = 100
+  inputDeviceNumber.value = num
+  showDeviceModal.value = true
+}
+
+const saveDeviceNumber = () => {
+  if (inputDeviceNumber.value !== null && inputDeviceNumber.value !== undefined) {
+    publish('bacnet/command/device/instance', inputDeviceNumber.value.toString())
+  }
+  showDeviceModal.value = false
+}
+
+const closeDeviceModal = () => {
+  showDeviceModal.value = false
+}
+
+const openTimeModal = () => {
+  let timeStr = sysData.value.systemTime || ''
+  if (timeStr && timeStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+    inputSystemTime.value = timeStr.substring(0, 10) + 'T' + timeStr.substring(11, 16)
+  } else {
+    const now = new Date()
+    const offset = now.getTimezoneOffset()
+    const localNow = new Date(now.getTime() - offset * 60 * 1000)
+    inputSystemTime.value = localNow.toISOString().substring(0, 16)
+  }
+  showTimeModal.value = true
+}
+
+const setSystemTimeToNow = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset()
+  const localNow = new Date(now.getTime() - offset * 60 * 1000)
+  inputSystemTime.value = localNow.toISOString().substring(0, 16)
+}
+
+const saveSystemTime = () => {
+  if (inputSystemTime.value) {
+    const formattedTime = inputSystemTime.value.replace('T', ' ') + ':00'
+    publish('bacnet/command/system/time', formattedTime)
+  }
+  showTimeModal.value = false
+}
+
+const closeTimeModal = () => {
+  showTimeModal.value = false
+}
 
 onMounted(() => subscribeToType('DEV'))
 onUnmounted(() => unsubscribeFromType('DEV'))
@@ -103,8 +160,11 @@ const exportAlarms = () => {
     <p class="text-secondary font-label text-sm uppercase tracking-widest">REAL-TIME MONITOR</p>
     </div>
     <div class="flex gap-4">
-    <div class="bg-surface-container-low px-4 py-2 rounded flex flex-col items-end border-l-4 border-primary">
-    <span class="text-primary font-space text-xl font-bold">{{ sysData.bacnetInstance }}</span>
+    <div @click="openDeviceModal" class="bg-surface-container-low px-4 py-2 rounded flex flex-col items-end border-l-4 border-primary cursor-pointer hover:bg-surface-container-high transition-all group select-none">
+    <div class="flex items-center gap-1">
+      <span class="material-symbols-outlined text-xs text-primary/50 group-hover:text-primary transition-colors">edit</span>
+      <span class="text-primary font-space text-xl font-bold">{{ sysData.bacnetInstance }}</span>
+    </div>
     <span class="text-[10px] text-secondary-dim font-label uppercase">BACnet Instance</span>
     </div>
     <div class="bg-surface-container-low px-4 py-2 rounded flex flex-col items-end border-l-4 border-emerald-500">
@@ -219,7 +279,12 @@ const exportAlarms = () => {
         </div>
         <div class="flex justify-between items-center py-1 border-b border-outline-variant/10">
           <span class="text-xs font-label uppercase text-slate-400">System Time</span>
-          <span class="font-mono text-sm text-on-surface">{{ sysData.systemTime }}</span>
+          <div class="flex items-center gap-3">
+            <button @click="openTimeModal" class="px-2.5 py-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded border border-primary/20 transition-all flex items-center gap-1.5 shadow-sm">
+              <span class="material-symbols-outlined text-xs">schedule</span> Set
+            </button>
+            <span class="font-mono text-sm text-on-surface">{{ sysData.systemTime }}</span>
+          </div>
         </div>
         <div class="flex justify-between items-center py-1 border-b border-outline-variant/10">
           <span class="text-xs font-label uppercase text-slate-400">Boot Time</span>
@@ -274,6 +339,60 @@ const exportAlarms = () => {
     </table>
     </div>
     </div>
+    </div>
+  </div>
+
+  <!-- Device Settings Modal -->
+  <div v-if="showDeviceModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-surface-container-high rounded-lg shadow-2xl border border-outline-variant/20 w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-6 py-4 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low">
+        <h2 class="text-lg font-bold text-on-surface flex items-center gap-2 font-space">
+          <span class="material-symbols-outlined text-primary text-xl">hub</span>
+          Device Instance Setting
+        </h2>
+        <button @click="closeDeviceModal" class="text-slate-400 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Device Number (Instance ID)</label>
+          <input type="number" v-model="inputDeviceNumber" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+          <p class="text-xs text-slate-500 mt-2">Enter a number between 0 and 4194303.</p>
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-surface-container-low flex justify-end gap-3 border-t border-outline-variant/10">
+        <button @click="closeDeviceModal" class="px-4 py-2 rounded text-sm font-bold text-slate-300 hover:bg-surface-container-highest transition-colors">Cancel</button>
+        <button @click="saveDeviceNumber" class="px-4 py-2 rounded text-sm font-bold bg-primary text-on-primary hover:brightness-110 transition-colors shadow-lg shadow-primary/20">Set</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Time Settings Modal -->
+  <div v-if="showTimeModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-surface-container-high rounded-lg shadow-2xl border border-outline-variant/20 w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-6 py-4 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low">
+        <h2 class="text-lg font-bold text-on-surface flex items-center gap-2 font-space">
+          <span class="material-symbols-outlined text-primary text-xl">schedule</span>
+          System Time Setting
+        </h2>
+        <button @click="closeTimeModal" class="text-slate-400 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Select Date & Time</label>
+          <input type="datetime-local" v-model="inputSystemTime" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors [color-scheme:dark]" />
+          <div class="flex gap-2 mt-2">
+            <button @click="setSystemTimeToNow" class="text-xs text-primary font-bold hover:underline">Use Current Time</button>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-surface-container-low flex justify-end gap-3 border-t border-outline-variant/10">
+        <button @click="closeTimeModal" class="px-4 py-2 rounded text-sm font-bold text-slate-300 hover:bg-surface-container-highest transition-colors">Cancel</button>
+        <button @click="saveSystemTime" class="px-4 py-2 rounded text-sm font-bold bg-primary text-on-primary hover:brightness-110 transition-colors shadow-lg shadow-primary/20">Set</button>
+      </div>
     </div>
   </div>
 </template>

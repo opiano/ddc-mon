@@ -6,6 +6,7 @@ const emit = defineEmits(['close'])
 
 const navItems = [
   { name: 'System Overview', path: '/', icon: 'dashboard' },
+  { name: 'Device List', path: '/device-list', icon: 'devices' },
   { name: 'Analog Inputs', path: '/analog-inputs', icon: 'input' },
   { name: 'Analog Outputs', path: '/analog-outputs', icon: 'output' },
   { name: 'Analog Values', path: '/analog-values', icon: 'data_object' },

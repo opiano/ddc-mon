@@ -12,10 +12,10 @@
 #define MQTT_KEEP_ALIVE 60
 
 // 웹에서 요청한 타입만 추적하기 위한 플래그 배열
-// AI, AO, AV, BI, BO, BV, MSV, DEV, CAL, SCH, TLOG, FBD (총 12개)
-bool active_types[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
-const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG", "FBD"};
-const int num_types = 12;
+// AI, AO, AV, BI, BO, BV, MSV, DEV, CAL, SCH, TLOG, FBD, DEVLST (총 13개)
+bool active_types[13] = {false, false, false, false, false, false, false, false, false, false, false, false, false};
+const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG", "FBD", "DEVLST"};
+const int num_types = 13;
 
 int get_type_index(const char *type) {
   for (int i = 0; i < num_types; i++) {
@@ -140,6 +140,30 @@ int main() {
                    bacnet_instance, system_status, total_objects, modules,
                    active_alarms, cpu, mem, cpu_temp, hostname, sys_time_str, uptime,
                    boot_time_str, events_json);
+        } else if (strcmp(types[t], "DEVLST") == 0) {
+          strcpy(payload, "[");
+          for (int i = 1; i <= 8; i++) {
+            char obj[512];
+            int dev_instance = 100 + i * 10;
+            int max_apdu = 1476;
+            int max_apdu_accepted = 1476;
+            int seg_supp = 3;
+            int sa = 0x01 + i;
+            int max_seg = 64;
+            int vendor_id = 15;
+            char dev_addr[64];
+            snprintf(dev_addr, sizeof(dev_addr), "%d / 192.168.1.%d:47808", i, 10 + i);
+
+            snprintf(obj, sizeof(obj),
+                     "{\"deviceInstance\":%d,\"maxApdu\":%d,\"maxApduAccepted\":%d,"
+                     "\"segSupp\":%d,\"sa\":%d,\"maxSeg\":%d,\"vendorId\":%d,"
+                     "\"devAddr\":\"%s\"}%s",
+                     dev_instance, max_apdu, max_apdu_accepted, seg_supp, sa,
+                     max_seg, vendor_id, dev_addr,
+                     (i == 8) ? "" : ",");
+            strcat(payload, obj);
+          }
+          strcat(payload, "]");
         } else {
           strcpy(payload, "[");
 
@@ -409,6 +433,71 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
         } else {
           printf("   Parse Failure: Unknown object type.\n\n");
         }
+      }
+    }
+  }
+  // 5. 기기 인스턴스 설정 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/device/instance", 30) == 0) {
+    if (msg->payloadlen > 0) {
+      char payload_str[256] = {0};
+      snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+               (char *)msg->payload);
+      int instance_val = atoi(payload_str);
+      printf("\n⚙️ [디바이스 설정 명령 수신] 새 Device ID/Instance: %d (Integer)\n\n", instance_val);
+    }
+  }
+  // 6. 시스템 시각 설정 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/system/time", 26) == 0) {
+    if (msg->payloadlen > 0) {
+      char payload_str[256] = {0};
+      snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+               (char *)msg->payload);
+      
+      int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+      if (sscanf(payload_str, "%d-%d-%d %d:%d:%d", &year, &month, &day, &hour, &minute, &second) == 6) {
+        printf("\n⏰ [시스템 시각 설정 명령 수신] parsed: YYYY=%d, MM=%d, DD=%d, hh=%d, mm=%d, ss=%d (Integers)\n\n",
+               year, month, day, hour, minute, second);
+      } else {
+        printf("\n⏰ [시스템 시각 설정 명령 수신] 새 System Time: %s (파싱 실패)\n\n", payload_str);
+      }
+    }
+  }
+  // 7. 수동 디바이스 추가 명령 처리
+  else if (strncmp(msg->topic, "bacnet/command/device/add", 25) == 0) {
+    if (msg->payloadlen > 0) {
+      char payload_str[512] = {0};
+      snprintf(payload_str, sizeof(payload_str), "%.*s", msg->payloadlen,
+               (char *)msg->payload);
+      
+      int dev_inst = 0, max_apdu = 0, seg_supp = 0, vendor = 0;
+      char dev_addr[128] = {0};
+      
+      if (sscanf(payload_str, "%d,%d,%d,%d,%127[^,\n]", 
+                 &dev_inst, &max_apdu, &seg_supp, &vendor, dev_addr) == 5) {
+        
+        int net_num = 0;
+        char mac_addr[128] = {0};
+        
+        if (sscanf(dev_addr, "%d / %127s", &net_num, mac_addr) == 2) {
+          printf("\n⚡ [수동 디바이스 추가 명령 수신]\n"
+                 "   Device Instance: %d (Integer)\n"
+                 "   Max APDU       : %d (Integer)\n"
+                 "   Seg Supp       : %d (Integer)\n"
+                 "   Vendor ID      : %d (Integer)\n"
+                 "   Network Number : %d (Integer)\n"
+                 "   MAC Address    : %s (String)\n\n",
+                 dev_inst, max_apdu, seg_supp, vendor, net_num, mac_addr);
+        } else {
+          printf("\n⚡ [수동 디바이스 추가 명령 수신]\n"
+                 "   Device Instance: %d (Integer)\n"
+                 "   Max APDU       : %d (Integer)\n"
+                 "   Seg Supp       : %d (Integer)\n"
+                 "   Vendor ID      : %d (Integer)\n"
+                 "   Device Address : %s (String) (분리 실패)\n\n",
+                 dev_inst, max_apdu, seg_supp, vendor, dev_addr);
+        }
+      } else {
+        printf("\n⚡ [수동 디바이스 추가 명령 수신] payload: %s (파싱 실패)\n\n", payload_str);
       }
     }
   }

@@ -18,7 +18,8 @@ const bacnetData = reactive({
   SCH: [],
   TLOG: [],
   FBD: [],
-  DEV: null
+  DEV: null,
+  DEVLST: []
 })
 
 let client = null

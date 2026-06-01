@@ -12,6 +12,7 @@ import Schedules from '../views/Schedules.vue'
 import TrendLogs from '../views/TrendLogs.vue'
 import Calendars from '../views/Calendars.vue'
 import Fbd from '../views/Fbd.vue'
+import DeviceList from '../views/DeviceList.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +25,11 @@ const router = createRouter({
           path: '',
           name: 'system-overview',
           component: SystemOverview
+        },
+        {
+          path: 'device-list',
+          name: 'device-list',
+          component: DeviceList
         },
         {
           path: 'analog-inputs',
