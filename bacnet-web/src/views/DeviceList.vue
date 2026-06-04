@@ -4,6 +4,13 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const { bacnetData, isConnected, subscribeToType, unsubscribeFromType, publish } = useMqtt()
 
+const segSuppLabels = {
+  0: 'both',
+  1: 'transmit',
+  2: 'receive',
+  3: 'none'
+}
+
 const objects = computed(() => {
   const data = bacnetData.DEVLST || []
   return [...data].sort((a, b) => {
@@ -123,7 +130,9 @@ onUnmounted(() => {
             <td class="text-sm text-on-surface/90 font-mono py-2.5 pl-4 whitespace-nowrap">
               {{ obj.maxApdu }} <span class="text-slate-500 text-xs">({{ obj.maxApduAccepted }})</span>
             </td>
-            <td class="text-sm text-on-surface/80 font-mono py-2.5 pl-4 whitespace-nowrap">{{ obj.segSupp }}</td>
+            <td class="text-sm text-on-surface/80 font-mono py-2.5 pl-4 whitespace-nowrap">
+              {{ obj.segSupp }}: {{ segSuppLabels[obj.segSupp] !== undefined ? segSuppLabels[obj.segSupp] : 'unknown' }}
+            </td>
             <td class="text-sm text-on-surface/80 font-mono py-2.5 pl-4 whitespace-nowrap">{{ obj.sa }}</td>
             <td class="text-sm text-on-surface/80 font-mono py-2.5 pl-4 whitespace-nowrap">{{ obj.maxSeg }}</td>
             <td class="text-sm text-on-surface/80 font-mono py-2.5 pl-4 whitespace-nowrap">{{ obj.vendorId }}</td>

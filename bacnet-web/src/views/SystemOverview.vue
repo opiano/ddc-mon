@@ -9,6 +9,9 @@ const showDeviceModal = ref(false)
 const inputDeviceNumber = ref(100)
 const showTimeModal = ref(false)
 const inputSystemTime = ref('')
+const showRecipientModal = ref(false)
+const inputRecipient1 = ref('')
+const inputRecipient2 = ref('')
 
 const openDeviceModal = () => {
   let instanceStr = sysData.value.bacnetInstance || ''
@@ -61,6 +64,30 @@ const closeTimeModal = () => {
   showTimeModal.value = false
 }
 
+const openRecipientModal = () => {
+  const currentRecipients = sysData.value.recipients || []
+  inputRecipient1.value = currentRecipients[0] || ''
+  inputRecipient2.value = currentRecipients[1] || ''
+  showRecipientModal.value = true
+}
+
+const saveRecipients = () => {
+  const list = []
+  if (inputRecipient1.value.trim()) {
+    list.push(inputRecipient1.value.trim())
+  }
+  if (inputRecipient2.value.trim()) {
+    list.push(inputRecipient2.value.trim())
+  }
+  const payload = list.join(',')
+  publish('bacnet/command/device/recipient', payload)
+  showRecipientModal.value = false
+}
+
+const closeRecipientModal = () => {
+  showRecipientModal.value = false
+}
+
 onMounted(() => subscribeToType('DEV'))
 onUnmounted(() => unsubscribeFromType('DEV'))
 
@@ -77,6 +104,7 @@ const sysData = computed(() => bacnetData.DEV || {
   systemTime: '-',
   uptime: 0,
   bootTime: '-',
+  recipients: [],
   events: []
 })
 
@@ -297,6 +325,15 @@ const exportAlarms = () => {
             <span class="text-[10px] font-bold text-primary px-1 py-0.5 bg-primary/10 rounded">{{ formatUptime(sysData.uptime) }}</span>
           </div>
         </div>
+        <div class="flex justify-between items-center py-1">
+          <span class="text-xs font-label uppercase text-slate-400">Recipient</span>
+          <div class="flex items-center gap-3">
+            <button @click="openRecipientModal" class="px-2.5 py-1 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded border border-primary/20 transition-all flex items-center gap-1.5 shadow-sm">
+              <span class="material-symbols-outlined text-xs">settings</span> Set
+            </button>
+            <span class="font-mono text-sm text-on-surface">{{ sysData.recipients && sysData.recipients.length > 0 ? sysData.recipients.join(', ') : '-' }}</span>
+          </div>
+        </div>
       </div>
     </div>
     <!-- Recent Events Log (Row 3) -->
@@ -392,6 +429,38 @@ const exportAlarms = () => {
       <div class="px-6 py-4 bg-surface-container-low flex justify-end gap-3 border-t border-outline-variant/10">
         <button @click="closeTimeModal" class="px-4 py-2 rounded text-sm font-bold text-slate-300 hover:bg-surface-container-highest transition-colors">Cancel</button>
         <button @click="saveSystemTime" class="px-4 py-2 rounded text-sm font-bold bg-primary text-on-primary hover:brightness-110 transition-colors shadow-lg shadow-primary/20">Set</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipient Settings Modal -->
+  <div v-if="showRecipientModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-surface-container-high rounded-lg shadow-2xl border border-outline-variant/20 w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200">
+      <div class="px-6 py-4 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low">
+        <h2 class="text-lg font-bold text-on-surface flex items-center gap-2 font-space">
+          <span class="material-symbols-outlined text-primary text-xl">settings</span>
+          Recipient Setting
+        </h2>
+        <button @click="closeRecipientModal" class="text-slate-400 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Recipient 1</label>
+          <input type="text" v-model="inputRecipient1" placeholder="e.g., 123" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Recipient 2</label>
+          <input type="text" v-model="inputRecipient2" placeholder="e.g., 1/192.168.219.13:47808" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+        </div>
+        <p class="text-xs text-slate-500">
+          Enter up to 2 recipients. You can enter a Device Instance ID or a Network / IP:PORT address. Leave empty to clear.
+        </p>
+      </div>
+      <div class="px-6 py-4 bg-surface-container-low flex justify-end gap-3 border-t border-outline-variant/10">
+        <button @click="closeRecipientModal" class="px-4 py-2 rounded text-sm font-bold text-slate-300 hover:bg-surface-container-highest transition-colors">Cancel</button>
+        <button @click="saveRecipients" class="px-4 py-2 rounded text-sm font-bold bg-primary text-on-primary hover:brightness-110 transition-colors shadow-lg shadow-primary/20">Set</button>
       </div>
     </div>
   </div>
