@@ -14,8 +14,8 @@ bool active_types[13] = {false, false, false, false, false, false, false, false,
 const char *types[] = {"AI", "AO", "AV", "BI", "BO", "BV", "MSV", "DEV", "CAL", "SCH", "TLOG", "FBD", "DEVLST"};
 const int num_types = 13;
 
-char recipient1[128] = "123";
-char recipient2[128] = "1/192.168.219.13:47808";
+char recipient1[128] = "";
+char recipient2[128] = "";
 
 int get_cpu_usage()
 {
@@ -390,6 +390,43 @@ void on_connect(struct mosquitto *mosq, void *obj, int rc)
     }
 }
 
+void parse_and_print_recipient(const char *label, const char *recipient)
+{
+    if (strlen(recipient) == 0)
+    {
+        printf("   %s: Empty (Cleared)\n", label);
+        return;
+    }
+
+    int net_num = 0;
+    int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
+    int port = 0;
+
+    if (sscanf(recipient, "%d/%d.%d.%d.%d:%d", &net_num, &ip1, &ip2, &ip3, &ip4, &port) == 6)
+    {
+        printf("   %s (Network Address):\n"
+               "      Network Number : %d\n"
+               "      IP Address     : %d.%d.%d.%d\n"
+               "      Port           : %d\n",
+               label, net_num, ip1, ip2, ip3, ip4, port);
+    }
+    else
+    {
+        char *endptr;
+        long dev_instance = strtol(recipient, &endptr, 10);
+        if (*endptr == '\0' && endptr != recipient)
+        {
+            printf("   %s (Device Instance):\n"
+                   "      Device Instance ID: %ld\n",
+                   label, dev_instance);
+        }
+        else
+        {
+            printf("   %s (Invalid/Other): %s\n", label, recipient);
+        }
+    }
+}
+
 void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
 {
     if (strncmp(msg->topic, "bacnet/request/subscribe/", 25) == 0)
@@ -621,9 +658,10 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
                 strncpy(recipient1, payload_str, sizeof(recipient1) - 1);
             }
 
-            printf("\n[Recipient Setting Command Received]\n"
-                   "   Recipient 1: %s\n"
-                   "   Recipient 2: %s\n\n", recipient1, recipient2);
+            printf("\n[Recipient Setting Command Received]\n");
+            parse_and_print_recipient("Recipient 1", recipient1);
+            parse_and_print_recipient("Recipient 2", recipient2);
+            printf("\n");
         }
         else
         {

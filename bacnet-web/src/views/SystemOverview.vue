@@ -12,6 +12,8 @@ const inputSystemTime = ref('')
 const showRecipientModal = ref(false)
 const inputRecipient1 = ref('')
 const inputRecipient2 = ref('')
+const errorRecipient1 = ref('')
+const errorRecipient2 = ref('')
 
 const openDeviceModal = () => {
   let instanceStr = sysData.value.bacnetInstance || ''
@@ -65,13 +67,56 @@ const closeTimeModal = () => {
 }
 
 const openRecipientModal = () => {
-  const currentRecipients = sysData.value.recipients || []
-  inputRecipient1.value = currentRecipients[0] || ''
-  inputRecipient2.value = currentRecipients[1] || ''
+  inputRecipient1.value = ''
+  inputRecipient2.value = ''
+  errorRecipient1.value = ''
+  errorRecipient2.value = ''
   showRecipientModal.value = true
 }
 
+const validateRecipientValue = (val) => {
+  const trimmed = val.trim()
+  if (!trimmed) return ''
+  
+  if (/^\d+$/.test(trimmed)) {
+    const num = parseInt(trimmed, 10)
+    if (num > 4194303) {
+      return 'Device Instance는 0 ~ 4194303 사이의 숫자여야 합니다.'
+    }
+    return ''
+  }
+  
+  const match = trimmed.match(/^(\d+)\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/)
+  if (match) {
+    const netNum = parseInt(match[1], 10)
+    if (netNum < 1 || netNum > 65535) {
+      return 'Network Number는 1 ~ 65535 사이의 숫자여야 합니다.'
+    }
+    
+    const octets = match[2].split('.').map(o => parseInt(o, 10))
+    if (octets.some(o => o > 255)) {
+      return 'IP 주소의 각 자리는 0 ~ 255 사이여야 합니다.'
+    }
+    
+    const port = parseInt(match[3], 10)
+    if (port < 1 || port > 65535) {
+      return 'Port는 1 ~ 65535 사이의 숫자여야 합니다.'
+    }
+    
+    return ''
+  }
+  
+  return '올바른 형식이 아닙니다. 숫자 또는 숫자/IP:Port 형식으로 입력해주세요. (예: 123 또는 1/192.168.219.13:47808)'
+}
+
 const saveRecipients = () => {
+  errorRecipient1.value = validateRecipientValue(inputRecipient1.value)
+  errorRecipient2.value = validateRecipientValue(inputRecipient2.value)
+  
+  if (errorRecipient1.value || errorRecipient2.value) {
+    return
+  }
+
   const list = []
   if (inputRecipient1.value.trim()) {
     list.push(inputRecipient1.value.trim())
@@ -448,11 +493,29 @@ const exportAlarms = () => {
       <div class="p-6 space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Recipient 1</label>
-          <input type="text" v-model="inputRecipient1" placeholder="e.g., 123" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+          <input type="text" v-model="inputRecipient1" placeholder="e.g., 123" 
+            :class="[
+              'w-full bg-surface-container-highest border rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none transition-colors',
+              errorRecipient1 ? 'border-error/50 focus:border-error' : 'border-outline-variant/20 focus:border-primary'
+            ]" 
+          />
+          <p v-if="errorRecipient1" class="text-xs text-error mt-1.5 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">error</span>
+            {{ errorRecipient1 }}
+          </p>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider font-label">Recipient 2</label>
-          <input type="text" v-model="inputRecipient2" placeholder="e.g., 1/192.168.219.13:47808" class="w-full bg-surface-container-highest border border-outline-variant/20 rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none focus:border-primary transition-colors" />
+          <input type="text" v-model="inputRecipient2" placeholder="e.g., 1/192.168.219.13:47808" 
+            :class="[
+              'w-full bg-surface-container-highest border rounded px-3 py-2 text-on-surface font-mono text-sm focus:outline-none transition-colors',
+              errorRecipient2 ? 'border-error/50 focus:border-error' : 'border-outline-variant/20 focus:border-primary'
+            ]" 
+          />
+          <p v-if="errorRecipient2" class="text-xs text-error mt-1.5 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">error</span>
+            {{ errorRecipient2 }}
+          </p>
         </div>
         <p class="text-xs text-slate-500">
           Enter up to 2 recipients. You can enter a Device Instance ID or a Network / IP:PORT address. Leave empty to clear.
