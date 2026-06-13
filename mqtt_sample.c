@@ -456,6 +456,52 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
         {
             printf("Web request received (unknown type): [%s] Unsubscription request ignored\n", type);
         }
+    else if (strncmp(msg->topic, "bacnet/request/trend/", 21) == 0)
+    {
+        const char *tlog_id = msg->topic + 21;
+        int instance_id = 1;
+        sscanf(tlog_id, "TLOG:%d", &instance_id);
+
+        printf("Web request received: trend data for [%s] (instance %d)\n", tlog_id, instance_id);
+
+        char *payload = malloc(16384);
+        if (payload)
+        {
+            strcpy(payload, "[");
+            time_t now = time(NULL);
+            
+            for (int i = 0; i < 180; i++)
+            {
+                time_t pt_time = now - (179 - i) * 15;
+                
+                double base_val = 22.0 + (instance_id % 5) * 1.5;
+                double wave = ((i % 40) - 20) * 0.15;
+                double noise = ((i % 10) - 5) * 0.05;
+                double val = base_val + wave + noise;
+                
+                char pt_json[128];
+                snprintf(pt_json, sizeof(pt_json),
+                         "{\"unixtime\":%u,\"value\":%.2f}%s",
+                         (unsigned int)pt_time, val,
+                         (i == 179) ? "" : ",");
+                strcat(payload, pt_json);
+            }
+            strcat(payload, "]");
+
+            char response_topic[128];
+            snprintf(response_topic, sizeof(response_topic), "bacnet/objects/trend/%s", tlog_id);
+
+            int pub_rc = mosquitto_publish(mosq, NULL, response_topic, strlen(payload), payload, 0, false);
+            if (pub_rc != MOSQ_ERR_SUCCESS)
+            {
+                fprintf(stderr, "Publish error (trend data for %s): %s\n", tlog_id, mosquitto_strerror(pub_rc));
+            }
+            else
+            {
+                printf("Published trend data for %s on topic %s (%d bytes)\n", tlog_id, response_topic, (int)strlen(payload));
+            }
+            free(payload);
+        }
     }
     else if (strncmp(msg->topic, "bacnet/command/write/", 21) == 0)
     {

@@ -22,6 +22,8 @@ const bacnetData = reactive({
   DEVLST: []
 })
 
+const trendData = reactive({})
+
 let client = null
 const activeSubscriptions = new Set()
 
@@ -113,6 +115,18 @@ export function useMqtt() {
     })
 
     client.on('message', (topic, message) => {
+      const trendMatch = topic.match(/^bacnet\/objects\/trend\/(.+)$/)
+      if (trendMatch) {
+        try {
+          const tlogId = trendMatch[1]
+          const payload = JSON.parse(message.toString().trim())
+          trendData[tlogId] = payload
+        } catch (e) {
+          console.error(`Failed to parse trend MQTT message on ${topic}:`, e)
+        }
+        return
+      }
+
       const updateMatch = topic.match(/^bacnet\/objects\/update\/(.+)$/)
       if (updateMatch) {
         try {
@@ -228,6 +242,33 @@ export function useMqtt() {
     publish(topic, payload)
   }
 
+  const subscribeToTrend = (tlogId) => {
+    if (client && isConnected.value) {
+      const topic = `bacnet/objects/trend/${tlogId}`
+      client.subscribe(topic, (err) => {
+        if (!err) {
+          console.log(`Subscribed to trend topic: ${topic}`)
+          // Publish request to backend
+          publish(`bacnet/request/trend/${tlogId}`, '')
+        } else {
+          console.error(`Failed to subscribe to ${topic}`, err)
+        }
+      })
+    }
+  }
+
+  const unsubscribeFromTrend = (tlogId) => {
+    if (client && isConnected.value) {
+      const topic = `bacnet/objects/trend/${tlogId}`
+      client.unsubscribe(topic, (err) => {
+        if (!err) {
+          console.log(`Unsubscribed from trend topic: ${topic}`)
+          delete trendData[tlogId]
+        }
+      })
+    }
+  }
+
   // Automatically connect the first time this composable is used
   if (!client) {
     connect()
@@ -244,6 +285,9 @@ export function useMqtt() {
     unsubscribeFromType,
     publish,
     writeValue,
-    writeAlarmConfig
+    writeAlarmConfig,
+    trendData: readonly(trendData),
+    subscribeToTrend,
+    unsubscribeFromTrend
   }
 }
