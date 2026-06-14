@@ -59,7 +59,7 @@ const currentTrendPoints = computed(() => {
 
 // Sort chronologically and limit to 180 points
 const points = computed(() => {
-  const sorted = [...currentTrendPoints.value].sort((a, b) => a.unixtime - b.unixtime)
+  const sorted = [...currentTrendPoints.value].sort((a, b) => a.t - b.t)
   return sorted.slice(-180)
 })
 
@@ -70,23 +70,23 @@ const reversePoints = computed(() => {
 // Calculations for Statistics
 const minVal = computed(() => {
   if (!points.value.length) return 0
-  return Math.min(...points.value.map(p => p.value))
+  return Math.min(...points.value.map(p => p.v))
 })
 
 const maxVal = computed(() => {
   if (!points.value.length) return 0
-  return Math.max(...points.value.map(p => p.value))
+  return Math.max(...points.value.map(p => p.v))
 })
 
 const avgVal = computed(() => {
   if (!points.value.length) return 0
-  const sum = points.value.reduce((acc, p) => acc + p.value, 0)
+  const sum = points.value.reduce((acc, p) => acc + p.v, 0)
   return sum / points.value.length
 })
 
 const curVal = computed(() => {
   if (!points.value.length) return 0
-  return points.value[points.value.length - 1].value
+  return points.value[points.value.length - 1].v
 })
 
 // SVG Graph Math
@@ -106,8 +106,8 @@ const valMax = computed(() => {
   return max + margin
 })
 
-const timeMin = computed(() => points.value.length ? points.value[0].unixtime : 0)
-const timeMax = computed(() => points.value.length ? points.value[points.value.length - 1].unixtime : 0)
+const timeMin = computed(() => points.value.length ? points.value[0].t : 0)
+const timeMax = computed(() => points.value.length ? points.value[points.value.length - 1].t : 0)
 
 const svgPoints = computed(() => {
   if (points.value.length < 2) return []
@@ -122,8 +122,8 @@ const svgPoints = computed(() => {
   const top = 20
 
   return points.value.map(p => {
-    const x = left + ((p.unixtime - tMin) / (tMax - tMin || 1)) * width
-    const y = top + height - ((p.value - vMin) / (vMax - vMin || 1)) * height
+    const x = left + ((p.t - tMin) / (tMax - tMin || 1)) * width
+    const y = top + height - ((p.v - vMin) / (vMax - vMin || 1)) * height
     return { x, y, raw: p }
   })
 })
@@ -396,8 +396,8 @@ onUnmounted(() => {
                   transform: 'translate(-50%, -115%)'
                 }"
               >
-                <span class="text-[#91aaeb]">{{ formatDateTime(hoverPoint.raw.unixtime) }}</span>
-                <span class="text-primary font-bold text-xs">Value: {{ hoverPoint.raw.value.toFixed(2) }}</span>
+                <span class="text-[#91aaeb]">{{ formatDateTime(hoverPoint.raw.t) }}</span>
+                <span class="text-primary font-bold text-xs">Value: {{ hoverPoint.raw.v.toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -456,9 +456,9 @@ onUnmounted(() => {
                   <tr v-if="reversePoints.length === 0">
                     <td colspan="2" class="text-center py-4 text-xs text-slate-600">No log entries available.</td>
                   </tr>
-                  <tr v-for="pt in reversePoints" :key="pt.unixtime" class="hover:bg-surface-bright/30">
-                    <td class="text-xs text-slate-400 font-mono py-1.5 pl-4">{{ formatDateTime(pt.unixtime) }}</td>
-                    <td class="text-xs text-primary font-mono py-1.5 pr-4 text-right">{{ pt.value.toFixed(2) }}</td>
+                  <tr v-for="pt in reversePoints" :key="pt.t" class="hover:bg-surface-bright/30">
+                    <td class="text-xs text-slate-400 font-mono py-1.5 pl-4">{{ formatDateTime(pt.t) }}</td>
+                    <td class="text-xs text-primary font-mono py-1.5 pr-4 text-right">{{ pt.v.toFixed(2) }}</td>
                   </tr>
                 </tbody>
               </table>

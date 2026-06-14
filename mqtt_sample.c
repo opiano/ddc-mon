@@ -481,7 +481,7 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
                 
                 char pt_json[128];
                 snprintf(pt_json, sizeof(pt_json),
-                         "{\"unixtime\":%u,\"value\":%.2f}%s",
+                         "{\"t\":%u,\"v\":%.2f}%s",
                          (unsigned int)pt_time, val,
                          (i == 179) ? "" : ",");
                 strcat(payload, pt_json);
