@@ -123,6 +123,9 @@ export function useMqtt() {
           trendData[tlogId] = payload
         } catch (e) {
           console.error(`Failed to parse trend MQTT message on ${topic}:`, e)
+          const msgStr = message.toString()
+          console.log(`Raw message length: ${msgStr.length}`)
+          console.log(`Snippet around pos 4654: "${msgStr.substring(Math.max(0, 4654 - 50), Math.min(msgStr.length, 4654 + 50))}"`)
         }
         return
       }
