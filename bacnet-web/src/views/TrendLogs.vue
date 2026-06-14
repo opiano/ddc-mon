@@ -153,11 +153,11 @@ const gridLines = computed(() => {
   return lines
 })
 
-// Time Formats (Explicitly using Asia/Seoul timezone to match the local system clock)
+// Time Formats (Explicitly using UTC timezone to bypass browser timezone offset and match the local system clock)
 const formatTime = (ts) => {
   const d = new Date(ts * 1000)
   return new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
+    timeZone: 'UTC',
     hour12: false,
     hour: '2-digit',
     minute: '2-digit',
@@ -168,7 +168,7 @@ const formatTime = (ts) => {
 const formatDateTime = (ts) => {
   const d = new Date(ts * 1000)
   const formatter = new Intl.DateTimeFormat('ko-KR', {
-    timeZone: 'Asia/Seoul',
+    timeZone: 'UTC',
     hour12: false,
     month: 'numeric',
     day: 'numeric',
