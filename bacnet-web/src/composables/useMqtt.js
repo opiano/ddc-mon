@@ -119,7 +119,15 @@ export function useMqtt() {
       if (trendMatch) {
         try {
           const tlogId = trendMatch[1]
-          const payload = JSON.parse(message.toString().trim())
+          let rawMessage = message.toString().trim()
+          
+          // 1. Fix missing commas between objects: "}{" -> "},{"
+          rawMessage = rawMessage.replace(/\}\s*\{/g, '},{')
+          
+          // 2. Fix trailing commas before closing brackets/braces: ", ]" -> "]"
+          rawMessage = rawMessage.replace(/,\s*([\]}])/g, '$1')
+
+          const payload = JSON.parse(rawMessage)
           trendData[tlogId] = payload
         } catch (e) {
           console.error(`Failed to parse trend MQTT message on ${topic}:`, e)
