@@ -153,15 +153,37 @@ const gridLines = computed(() => {
   return lines
 })
 
-// Time Formats
+// Time Formats (Explicitly using Asia/Seoul timezone to match the local system clock)
 const formatTime = (ts) => {
   const d = new Date(ts * 1000)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(d)
 }
 
 const formatDateTime = (ts) => {
   const d = new Date(ts * 1000)
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+  const formatter = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour12: false,
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+  const parts = formatter.formatToParts(d)
+  const month = parts.find(p => p.type === 'month').value
+  const day = parts.find(p => p.type === 'day').value
+  const hour = parts.find(p => p.type === 'hour').value
+  const minute = parts.find(p => p.type === 'minute').value
+  const second = parts.find(p => p.type === 'second').value
+  
+  return `${month}/${day} ${hour}:${minute}:${second}`
 }
 
 // Hover Interaction
