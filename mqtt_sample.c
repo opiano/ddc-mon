@@ -470,9 +470,10 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
             strcpy(payload, "[");
             time_t now = time(NULL);
             
-            for (int i = 0; i < 180; i++)
+            int total_points = 180;
+            for (int i = 0; i < total_points; i++)
             {
-                time_t pt_time = now - (179 - i) * 15;
+                time_t pt_time = now - (total_points - 1 - i) * 15;
                 
                 double base_val = 22.0 + (instance_id % 5) * 1.5;
                 double wave = ((i % 40) - 20) * 0.15;
@@ -483,7 +484,7 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
                 snprintf(pt_json, sizeof(pt_json),
                          "{\"t\":%u,\"v\":%.2f}%s",
                          (unsigned int)pt_time, val,
-                         (i == 179) ? "" : ",");
+                         (i == total_points - 1) ? "" : ",");
                 strcat(payload, pt_json);
             }
             strcat(payload, "]");

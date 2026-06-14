@@ -124,8 +124,8 @@ export function useMqtt() {
           // 1. Fix missing commas between objects: "}{" -> "},{"
           rawMessage = rawMessage.replace(/\}\s*\{/g, '},{')
           
-          // 2. Fix trailing commas before closing brackets/braces: ", ]" -> "]"
-          rawMessage = rawMessage.replace(/,\s*([\]}])/g, '$1')
+          // 2. Fix trailing commas before closing brackets/braces: e.g. ",]" or ",, ]" -> "]" or " ]"
+          rawMessage = rawMessage.replace(/,+(?=\s*[\]}])/g, '')
 
           const payload = JSON.parse(rawMessage)
           trendData[tlogId] = payload
