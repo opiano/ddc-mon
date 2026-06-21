@@ -236,6 +236,31 @@ int main()
                                      types[t], id, name, port, pv, units, sts, rel, oos, pri,
                                      ed, hl, ll,
                                      (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\","
+                                     "\"pv\":%.1f,\"units\":\"%s\",\"sts\":\"%s\",\"rel\":\""
+                                     "%s\",\"oos\":%s,\"pri\":%d,\"ed\":%d,"
+                                     "\"hl\":%.1f,\"ll\":%.1f}",
+                                     types[t], id, name, port, pv, units, sts, rel, oos, pri,
+                                     ed, hl, ll);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%.1f", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
+
+                            char ev_topic[128];
+                            char ev_payload[64];
+                            snprintf(ev_topic, sizeof(ev_topic), "bacnet/%s/%d/ev", types[t], id);
+                            snprintf(ev_payload, sizeof(ev_payload), "%s", sts);
+                            mosquitto_publish(mosq, NULL, ev_topic, strlen(ev_payload), ev_payload, 0, true);
                         }
                         else if (strcmp(types[t], "BI") == 0 ||
                                  strcmp(types[t], "BO") == 0 ||
@@ -261,6 +286,30 @@ int main()
                                 types[t], id, name, port, pv, sts, rel, oos, pri,
                                 ed, av,
                                 (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\",\"pv\":\""
+                                     "%s\",\"sts\":\"%s\",\"rel\":\"%s\",\"oos\":%s,\"pri\":%d,"
+                                     "\"ed\":%d,\"av\":%d}",
+                                     types[t], id, name, port, pv, sts, rel, oos, pri,
+                                     ed, av);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%s", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
+
+                            char ev_topic[128];
+                            char ev_payload[64];
+                            snprintf(ev_topic, sizeof(ev_topic), "bacnet/%s/%d/ev", types[t], id);
+                            snprintf(ev_payload, sizeof(ev_payload), "%s", sts);
+                            mosquitto_publish(mosq, NULL, ev_topic, strlen(ev_payload), ev_payload, 0, true);
                         }
                         else if (strcmp(types[t], "MSV") == 0)
                         {
@@ -285,6 +334,31 @@ int main()
                                      types[t], id, name, port, pv, states, sts, rel, oos, pri,
                                      ed, av,
                                      (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"port\":\"%s\","
+                                     "\"pv\":%d,\"states\":%d,\"sts\":\"%s\",\"rel\":\"%s\","
+                                     "\"oos\":%s,\"pri\":%d,\"ed\":%d,"
+                                     "\"av\":%d}",
+                                     types[t], id, name, port, pv, states, sts, rel, oos, pri,
+                                     ed, av);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%d", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
+
+                            char ev_topic[128];
+                            char ev_payload[64];
+                            snprintf(ev_topic, sizeof(ev_topic), "bacnet/%s/%d/ev", types[t], id);
+                            snprintf(ev_payload, sizeof(ev_payload), "%s", sts);
+                            mosquitto_publish(mosq, NULL, ev_topic, strlen(ev_payload), ev_payload, 0, true);
                         }
                         else if (strcmp(types[t], "CAL") == 0)
                         {
@@ -297,6 +371,21 @@ int main()
                             snprintf(obj, sizeof(obj),
                                      "{\"id\":\"%s:%d\",\"name\":\"%s\",\"totalEntries\":%d,\"pv\":\"%s\"}%s",
                                      types[t], id, name, totalEntries, pv, (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"totalEntries\":%d,\"pv\":\"%s\"}",
+                                     types[t], id, name, totalEntries, pv);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%s", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
                         }
                         else if (strcmp(types[t], "SCH") == 0)
                         {
@@ -312,6 +401,21 @@ int main()
                             snprintf(obj, sizeof(obj),
                                      "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"objRef\":\"%s\"}%s",
                                      types[t], id, name, pv, effectivePeriod, scheduleDefault, objRef, (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":\"%s\",\"effPeriod\":\"%s\",\"schDef\":\"%s\",\"objRef\":\"%s\"}",
+                                     types[t], id, name, pv, effectivePeriod, scheduleDefault, objRef);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%s", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
                         }
                         else if (strcmp(types[t], "TLOG") == 0)
                         {
@@ -328,6 +432,15 @@ int main()
                             snprintf(obj, sizeof(obj),
                                      "{\"id\":\"%s:%d\",\"name\":\"%s\",\"enable\":\"%s\",\"interval\":%d,\"logRef\":\"%s\",\"rc\":%d,\"tc\":%d}%s",
                                      types[t], id, name, enable, interval, logRef, recordCount, totalCount, (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"enable\":\"%s\",\"interval\":%d,\"logRef\":\"%s\",\"rc\":%d,\"tc\":%d}",
+                                     types[t], id, name, enable, interval, logRef, recordCount, totalCount);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
                         }
                         else if (strcmp(types[t], "FBD") == 0)
                         {
@@ -343,6 +456,21 @@ int main()
                             snprintf(obj, sizeof(obj),
                                      "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":%s,\"period\":%d,\"fb\":%d,\"var\":%d,\"link\":%d}%s",
                                      types[t], id, name, pv, period, fb, var, link, (i == 100) ? "" : ",");
+
+                            // Publish individual topics with retain = true
+                            char meta_topic[128];
+                            char meta_payload[512];
+                            snprintf(meta_topic, sizeof(meta_topic), "bacnet/%s/%d/meta", types[t], id);
+                            snprintf(meta_payload, sizeof(meta_payload),
+                                     "{\"id\":\"%s:%d\",\"name\":\"%s\",\"pv\":%s,\"period\":%d,\"fb\":%d,\"var\":%d,\"link\":%d}",
+                                     types[t], id, name, pv, period, fb, var, link);
+                            mosquitto_publish(mosq, NULL, meta_topic, strlen(meta_payload), meta_payload, 0, true);
+
+                            char val_topic[128];
+                            char val_payload[64];
+                            snprintf(val_topic, sizeof(val_topic), "bacnet/%s/%d/value", types[t], id);
+                            snprintf(val_payload, sizeof(val_payload), "%s", pv);
+                            mosquitto_publish(mosq, NULL, val_topic, strlen(val_payload), val_payload, 0, true);
                         }
 
                         strcat(payload, obj);
